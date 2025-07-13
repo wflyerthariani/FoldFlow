@@ -2,6 +2,10 @@ nextflow.enable.dsl=2
 
 params.rfdiff_editables_dir = '/ibex/user/thariaaa/RFdiffContainer'
 params.rfdiff_sif_path = '/ibex/user/thariaaa/RFdiffContainer/RFdiffusion.sif'
+
+params.mpnn_editables_dir = '/ibex/user/thariaaa/MPNNContainer'
+params.mpnn_sif_path = '/ibex/user/thariaaa/MPNNContainer/ProteinMPNN.sif'
+
 params.contig_str = 'contigmap.contigs=[150-150]'
 params.input_pdb = '/ibex/user/thariaaa/ContainerizedProteinSynthesis/5TPN.pdb'
 params.num_designs = 5
@@ -13,7 +17,7 @@ process RFdiffusion {
     input:
         tuple val(contig_str), val(output_prefix), val(design_startnum), path(input_pdb)
     output:
-        tuple val(design_startnum), path("RFD${output_prefix}_*.pdb"), path("RFD${output_prefix}_*.trb")
+        tuple val(design_startnum), val(output_prefix), path("RFD${output_prefix}_*.pdb"), path("RFD${output_prefix}_*.trb")
     script:
         """
         singularity exec --nv \
@@ -32,13 +36,27 @@ process RFdiffusion {
 process ProteinMPNN {
     tag "mpnn_${task.index}"
     input:
-        tuple val(index), file(pdb), file(trb)
+        tuple val(index), val(output_prefix), file(pdb), file(trb)
     output:
         path "mpnn_output_${index}.txt"
     script:
         """
+        folder_with_pdbs="$PWD/MPNNdiv_${output_prefix}_${index}/"
+        mkdir -p "\$folder_with_pdbs"
+        cp "$pdb" "\$folder_with_pdbs/"
+        path_for_parsed_chains="\$folder_with_pdbs/parsed_pdbs.jsonl"
+        path_for_fixed_positions="\$folder_with_pdbs/fixed_pdbs.jsonl"
+        
+        singularity exec --nv \
+            --bind "${params.mpnn_editables_dir}":"${params.mpnn_editables_dir}" \
+            --pwd  "${params.mpnn_editables_dir}" \
+            "${params.mpnn_sif_path}" \
+            python /opt/ProteinMPNN/helper_scripts/parse_multiple_chains.py \
+                --input_path "\$folder_with_pdbs" \
+                --output_path "\$path_for_parsed_chains"
+
         # Example command, replace with your actual ProteinMPNN invocation
-        echo "Running ProteinMPNN on ${pdb} and ${trb}" > mpnn_output_${index}.txt
+        echo "Running ProteinMPNN on $pdb and $trb" > mpnn_output_${index}.txt
         """
 }
 
