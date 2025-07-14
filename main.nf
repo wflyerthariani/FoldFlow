@@ -83,6 +83,10 @@ process ProteinMPNN {
                 --sampling_temp "0.1" \
                 --seed 37 \
                 --batch_size 1
+        
+        python ${projectDir}/helper/split_mpnn_fastas.py \
+            --input-folder "\$output_dir/seqs" \
+            --output-folder "\$output_dir/split"
 
         # Example command, replace with your actual ProteinMPNN invocation
         echo "Running ProteinMPNN on $pdb and $trb" > mpnn_output_${index}.txt
