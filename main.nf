@@ -39,7 +39,7 @@ process ProteinMPNN {
     input:
         tuple val(index), val(output_prefix), file(pdb), file(trb)
     output:
-        path "mpnn_output_${index}.txt"
+        path "MPNNresults_${output_prefix}_${index}/split/*.fasta"
     script:
         """
         output_dir="\$PWD/MPNNresults_${output_prefix}_${index}/"
@@ -87,9 +87,6 @@ process ProteinMPNN {
         python ${projectDir}/helper/split_mpnn_fastas.py \
             --input-folder "\$output_dir/seqs" \
             --output-folder "\$output_dir/split"
-
-        # Example command, replace with your actual ProteinMPNN invocation
-        echo "Running ProteinMPNN on $pdb and $trb" > mpnn_output_${index}.txt
         """
 }
 
