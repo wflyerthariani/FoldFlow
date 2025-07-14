@@ -35,13 +35,14 @@ process RFdiffusion {
 
 process ProteinMPNN {
     tag "mpnn_${task.index}"
+    conda 'envs/MPNN-env.yml'
     input:
         tuple val(index), val(output_prefix), file(pdb), file(trb)
     output:
         path "mpnn_output_${index}.txt"
     script:
         """
-        folder_with_pdbs="$PWD/MPNNdiv_${output_prefix}_${index}/"
+        folder_with_pdbs="\$PWD/MPNNdiv_${output_prefix}_${index}/"
         mkdir -p "\$folder_with_pdbs"
         cp "$pdb" "\$folder_with_pdbs/"
         path_for_parsed_chains="\$folder_with_pdbs/parsed_pdbs.jsonl"
@@ -54,6 +55,18 @@ process ProteinMPNN {
             python /opt/ProteinMPNN/helper_scripts/parse_multiple_chains.py \
                 --input_path "\$folder_with_pdbs" \
                 --output_path "\$path_for_parsed_chains"
+        
+        get_fixed=\$(python ${projectDir}/helper/reformat_fixed_residues.py --input-file $trb)
+
+        chains_to_design=\$(echo "\$get_fixed" | grep -- '--chains_to_design' | cut -d'"' -f2)
+        fixed_positions=\$(echo "\$get_fixed" | grep -- '--fixed_positions' | cut -d'"' -f2)
+
+        singularity exec --nv \
+            --bind "${params.mpnn_editables_dir}":"${params.mpnn_editables_dir}" \
+            --pwd  "${params.mpnn_editables_dir}" \
+            "${params.mpnn_sif_path}" \
+            python /opt/ProteinMPNN/helper_scripts/make_fixed_positions_dict.py \
+                --input_path=\$path_for_parsed_chains --output_path=\$path_for_fixed_positions --chain_list "\$chains_to_design" --position_list "\$fixed_positions"
 
         # Example command, replace with your actual ProteinMPNN invocation
         echo "Running ProteinMPNN on $pdb and $trb" > mpnn_output_${index}.txt
