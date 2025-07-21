@@ -7,10 +7,11 @@ params.mpnn_editables_dir = '/ibex/user/thariaaa/MPNNContainer'
 params.mpnn_sif_path = '/ibex/user/thariaaa/MPNNContainer/ProteinMPNN.sif'
 
 params.alphafold_sif_path = '/ibex/user/thariaaa/AlphaFoldContainer/AlphaFold.sif'
+params.alphafold_data_dir = '/ibex/reference/KSL/alphafold/2.3.1/'
 
 params.contig_str = 'contigmap.contigs=[150-150]'
 params.input_pdb = '/ibex/user/thariaaa/ContainerizedProteinSynthesis/5TPN.pdb'
-params.num_designs = 5
+params.num_designs = 1
 params.output_prefix = 'test'
 
 process RFdiffusion {
@@ -102,9 +103,9 @@ process AlphaFold {
     script:
         """
         OUTPUT_DIR="AlphaFoldresults/"
-        DATA_DIR="/ibex/reference/KSL/alphafold/2.3.1/"
+        DATA_DIR="${params.alphafold_data_dir}"
 
-        singularity exec --nv --bind /ibex/reference/KSL/:/ibex/reference/KSL/ "${params.alphafold_sif_path}" /opt/run_alphafold.sh -f ${fasta} -d \$DATA_DIR -o \$OUTPUT_DIR -t 2020-05-14
+        singularity exec --nv --bind ${params.alphafold_data_dir}:${params.alphafold_data_dir} "${params.alphafold_sif_path}" /opt/run_alphafold.sh -f ${fasta} -d ${params.alphafold_data_dir} -o \$OUTPUT_DIR -t 2020-05-14
         """
 }
 
