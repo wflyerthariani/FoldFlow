@@ -6,6 +6,8 @@ params.rfdiff_sif_path = '/ibex/user/thariaaa/RFdiffContainer/RFdiffusion.sif'
 params.mpnn_editables_dir = '/ibex/user/thariaaa/MPNNContainer'
 params.mpnn_sif_path = '/ibex/user/thariaaa/MPNNContainer/ProteinMPNN.sif'
 
+params.alphafold_sif_path = '/ibex/user/thariaaa/AlphaFoldContainer/AlphaFold.sif'
+
 params.contig_str = 'contigmap.contigs=[150-150]'
 params.input_pdb = '/ibex/user/thariaaa/ContainerizedProteinSynthesis/5TPN.pdb'
 params.num_designs = 5
@@ -17,7 +19,7 @@ process RFdiffusion {
     input:
         tuple val(contig_str), val(output_prefix), val(design_startnum), path(input_pdb)
     output:
-        tuple val(design_startnum), val(output_prefix), path("RFD${output_prefix}_*.pdb"), path("RFD${output_prefix}_*.trb")
+        tuple val(design_startnum), val(output_prefix), path("RFDresults_${output_prefix}_*.pdb"), path("RFDresults_${output_prefix}_*.trb")
     script:
         """
         singularity exec --nv \
@@ -27,7 +29,7 @@ process RFdiffusion {
             "${params.rfdiff_sif_path}" \
             /opt/miniconda/envs/SE3nv/bin/python /opt/RFdiffusion/scripts/run_inference.py \
                 "$contig_str" \
-                inference.output_prefix="\${PWD}/RFD$output_prefix" \
+                inference.output_prefix="\${PWD}/RFDresults_$output_prefix" \
                 inference.num_designs=1 \
                 inference.design_startnum="$design_startnum" 
         """
@@ -35,11 +37,11 @@ process RFdiffusion {
 
 process ProteinMPNN {
     tag "mpnn_${task.index}"
-    conda 'envs/MPNN-env.yml'
+    conda 'envs/helper-env.yml'
     input:
         tuple val(index), val(output_prefix), file(pdb), file(trb)
     output:
-        path "MPNNresults_${output_prefix}_${index}/split/*.fasta"
+        path "MPNNresults_${output_prefix}_${index}/split/*.fasta", emit: fasta_files
     script:
         """
         output_dir="\$PWD/MPNNresults_${output_prefix}_${index}/"
@@ -90,10 +92,29 @@ process ProteinMPNN {
         """
 }
 
+process AlphaFold {
+    tag "alphafold_${task.index}"
+
+    input:
+        path fasta
+    output:
+        path("AlphaFoldresults/${fasta.baseName}/*.pdb")
+    script:
+        """
+        OUTPUT_DIR="AlphaFoldresults/"
+        DATA_DIR="/ibex/reference/KSL/alphafold/2.3.1/"
+
+        singularity exec --nv --bind /ibex/reference/KSL/:/ibex/reference/KSL/ "${params.alphafold_sif_path}" /opt/run_alphafold.sh -f ${fasta} -d \$DATA_DIR -o \$OUTPUT_DIR -t 2020-05-14
+        """
+}
+
 workflow {
-    rf_out_ch = Channel.from(0..(params.num_designs-1))
+    rf_in_ch = Channel.from(0..(params.num_designs-1))
         .map { idx -> tuple(params.contig_str, params.output_prefix, idx, file(params.input_pdb)) }
-        | RFdiffusion
+    
+    rf_out_ch = rf_in_ch | RFdiffusion
 
     mpnn_out_ch = rf_out_ch | ProteinMPNN
+
+    alphafold_out_ch = mpnn_out_ch.fasta_files.flatten() | AlphaFold
 }
