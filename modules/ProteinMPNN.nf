@@ -36,6 +36,8 @@ process ProteinMPNN {
             python /opt/ProteinMPNN/helper_scripts/make_fixed_positions_dict.py \
                 --input_path=\$path_for_parsed_chains --output_path=\$path_for_fixed_positions --chain_list "\$chains_to_design" --position_list "\$fixed_positions"
 
+        get_args=\$(python ${projectDir}/helper/yaml_to_args.py "${params.config_dir}/${params.mpnn_config_name}")
+
         singularity exec --nv \
             --bind "${params.mpnn_editables_dir}":"${params.mpnn_editables_dir}" \
             --pwd  "${params.mpnn_editables_dir}" \
@@ -45,8 +47,7 @@ process ProteinMPNN {
                 --out_folder \$output_dir \
                 --fixed_positions_jsonl \$path_for_fixed_positions \
                 --num_seq_per_target ${params.mpnn_num_sequences} \
-                --sampling_temp "0.1" \
-                --batch_size 1
+                --batch_size 1 \${get_args}
         
         python ${projectDir}/helper/split_mpnn_fastas.py \
             --input-folder "\$output_dir/seqs" \
