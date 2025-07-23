@@ -6,7 +6,7 @@ include { AlphaFold } from './modules/AlphaFold.nf'
 
 workflow {
     rf_in_ch = Channel.from(0..(params.num_designs-1))
-        .map { idx -> tuple(params.contig_str, params.output_prefix, idx, file(params.input_pdb)) }
+        .map { idx -> tuple(params.output_prefix, idx) }
     
     rf_out_ch = rf_in_ch | RFdiffusion
 
