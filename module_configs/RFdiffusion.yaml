@@ -1,7 +1,7 @@
 # Base inference Configuration.
 
 inference:
-  input_pdb: null
+  input_pdb: /ibex/user/thariaaa/FoldFlow/6px6.pdb
   ckpt_override_path: null
   symmetry: null
   recenter: True
@@ -22,7 +22,7 @@ inference:
   cyc_chains: 'a'
 
 contigmap:
-  contigs: [150-150]
+  contigs: [30-50/A2-35/30-50]
   inpaint_seq: null
   inpaint_str: null
   inpaint_str_helix: null
