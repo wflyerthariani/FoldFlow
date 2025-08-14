@@ -2,15 +2,15 @@ process ProteinMPNN {
     tag "mpnn_${task.index}"
     conda 'envs/helper-env.yml'
     input:
-        tuple val(index), val(output_prefix), file(pdb), file(trb)
+        tuple file(pdb), file(trb)
     output:
-        path "MPNNresults_${output_prefix}_${index}/split/*.fasta", emit: fasta_files
+        path "MPNNresults_${pdb.baseName}/split/*.fasta", emit: fasta_files
     script:
         """
-        output_dir="\$PWD/MPNNresults_${output_prefix}_${index}/"
+        output_dir="\$PWD/MPNNresults_${pdb.baseName}/"
         mkdir -p "\$output_dir"
 
-        folder_with_pdbs="\$PWD/MPNNdiv_${output_prefix}_${index}/"
+        folder_with_pdbs="\$PWD/MPNNdiv_${pdb.baseName}/"
         mkdir -p "\$folder_with_pdbs"
         cp "$pdb" "\$folder_with_pdbs/"
         path_for_parsed_chains="\$folder_with_pdbs/parsed_pdbs.jsonl"

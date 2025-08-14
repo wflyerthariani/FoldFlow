@@ -1,10 +1,10 @@
 process RFdiffusion {
-    tag "rf_array_${task.index}"
+    tag "rfdiffusion_${task.index}"
     
     input:
         tuple val(output_prefix), val(design_startnum)
     output:
-        tuple val(design_startnum), val(output_prefix), path("RFDresults_${output_prefix}_*.pdb"), path("RFDresults_${output_prefix}_*.trb")
+        tuple path("RFDresults_*.pdb"), path("RFDresults_*.trb")
     script:
         """
         singularity exec --nv \
@@ -14,7 +14,7 @@ process RFdiffusion {
             "${params.rfdiff_sif_path}" \
             /opt/miniconda/envs/SE3nv/bin/python /opt/RFdiffusion/scripts/run_inference.py \
                 --config-path ${params.config_dir} --config-name ${params.rfdiff_config_name} \
-                +inference.output_prefix="\${PWD}/RFDresults_$output_prefix" \
+                +inference.output_prefix="\${PWD}/RFDresults" \
                 +inference.num_designs=1 \
                 +inference.design_startnum="$design_startnum" 
         """
