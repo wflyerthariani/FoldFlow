@@ -19,3 +19,7 @@ Each `editables_dir`, `sif_path` and `data_dir` needs to be set according to how
 - [RFdiffusion container](https://github.com/wflyerthariani/RFdiffusionContainer.git)
 - [MPNN container](https://github.com/wflyerthariani/MPNNContainer.git)
 - [AlphaFold container](https://github.com/wflyerthariani/AlphaFoldContainer.git)
+
+The number of outputs for each stage of the pipeline can also be edited in `nextflow.config` alongside any naming conventions and the SLURM setup
+
+To change the configuration of any specific model you will need to edit this information in `module_configs`
