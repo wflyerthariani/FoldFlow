@@ -1,0 +1,99 @@
+nextflow_process {
+
+    name "Test Process ALPHAFOLD"
+    script "modules/local/alphafold/main.nf"
+    process "ALPHAFOLD"
+
+    test("alphafold structure prediction with test protein") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            // Output PDB structure file exists with correct naming
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_protein'
+            
+            // Check that PDB files were generated
+            def pdbFiles = pdbPath instanceof List ? pdbPath : [pdbPath]
+            assert pdbFiles.size() > 0
+            pdbFiles.each { pdb ->
+                def pdbFile = path(pdb)
+                assert pdbFile.exists()
+                assert pdbFile.fileName.toString().endsWith('.pdb')
+            }
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+            def versionsYml = path(process.out.versions[0])
+            assert versionsYml.text.contains('ALPHAFOLD')
+            assert versionsYml.text.contains('alphafold')
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | alphafold structure prediction with test protein") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            // Output PDB structure file exists with correct naming
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_protein'
+            
+            // Check that stub PDB file was generated
+            def pdbFile = path(pdbPath)
+            assert pdbFile.fileName.toString() == 'test_protein_model_1.pdb'
+
+            // Scores output is present
+            assert process.out.scores.size() == 1
+            
+            // Timings output is present
+            assert process.out.timings.size() == 1
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+}

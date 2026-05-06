@@ -1,0 +1,190 @@
+nextflow_process {
+
+    name "Test Process RFDIFFUSION"
+    script "modules/local/rfdiffusion/main.nf"
+    process "RFDIFFUSION"
+
+    test("rfdiffusion de novo protein design") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design' ],
+                    1
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            // Output PDB structure file exists
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design'
+            assert meta.design_idx == 1
+            
+            // Check that PDB file was generated
+            def pdbFile = path(pdbPath)
+            assert pdbFile.exists()
+            assert pdbFile.fileName.toString().endsWith('.pdb')
+            assert pdbFile.fileName.toString().contains('_RFD_1')
+
+            // Trajectory file may be present
+            if (process.out.trajectories.size() > 0) {
+                def (trajMeta, trbPath) = process.out.trajectories[0]
+                def trbFile = path(trbPath)
+                assert trbFile.exists()
+                assert trbFile.fileName.toString().endsWith('.trb')
+            }
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+            def versionsYml = path(process.out.versions[0])
+            assert versionsYml.text.contains('RFDIFFUSION')
+            assert versionsYml.text.contains('rfdiffusion')
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    test("rfdiffusion de novo protein design with different index") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design_multi', design_idx: 5 ],
+                    5
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            // Output PDB structure file exists with correct design index
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design_multi'
+            assert meta.design_idx == 5
+            
+            // Check that PDB file was generated with correct index
+            def pdbFile = path(pdbPath)
+            assert pdbFile.exists()
+            assert pdbFile.fileName.toString().contains('_RFD_5')
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | rfdiffusion de novo protein design") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design' ],
+                    1
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            // Output PDB structure file exists
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design'
+            assert meta.design_idx == 1
+            
+            // Check that stub PDB file was generated
+            def pdbFile = path(pdbPath)
+            assert pdbFile.fileName.toString() == 'test_design_RFD_1.pdb'
+
+            // Trajectory file is present in stub
+            assert process.out.trajectories.size() == 1
+            def (trajMeta, trbPath) = process.out.trajectories[0]
+            def trbFile = path(trbPath)
+            assert trbFile.fileName.toString() == 'test_design_RFD_1.trb'
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    test("stub | rfdiffusion de novo protein design with different index") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design_multi', design_idx: 10 ],
+                    10
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            // Output PDB structure file exists with correct index
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design_multi'
+            assert meta.design_idx == 10
+            
+            // Check that stub PDB file was generated with correct index
+            def pdbFile = path(pdbPath)
+            assert pdbFile.fileName.toString() == 'test_design_multi_RFD_10.pdb'
+
+            // Trajectory file is present with correct index
+            assert process.out.trajectories.size() == 1
+            def (trajMeta, trbPath) = process.out.trajectories[0]
+            def trbFile = path(trbPath)
+            assert trbFile.fileName.toString() == 'test_design_multi_RFD_10.trb'
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+}
