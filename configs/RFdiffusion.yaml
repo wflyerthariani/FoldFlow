@@ -1,7 +1,6 @@
 # Base inference Configuration.
 
 inference:
-  input_pdb: /ibex/user/thariaaa/FoldFlow/6px6.pdb
   num_designs: 1
   ckpt_override_path: null
   symmetry: null

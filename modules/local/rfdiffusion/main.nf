@@ -9,7 +9,7 @@ process RFDIFFUSION {
         : 'rosettacommons/rfdiffusion'}"
 
     input:
-    tuple val(meta), val(design_idx)
+    tuple val(meta), val(design_idx), path(input_pdb)
 
     output:
     tuple val(meta), path("*.pdb"), emit: structures
@@ -24,7 +24,7 @@ process RFDIFFUSION {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def config_path = params.rfdiff_config_path ?: params.config_dir ?: '.'
     def config_name = params.rfdiff_config_name ?: 'RFdiffusion.yaml'
-    def editables_dir = params.rfdiff_editables_dir ?: '/ibex/user/x_thariaa/RFdiffusionContainer'
+    def editables_dir = params.rfdiff_editables_dir ?: projectDir
 
     // Construct environment variables
     def schedule_dir = params.rfdiff_editables_dir ? "${params.rfdiff_editables_dir}/schedules" : "${editables_dir}/schedules"
@@ -39,6 +39,7 @@ process RFDIFFUSION {
     run_inference.py \\
         --config-path ${config_path} \\
         --config-name ${config_name} \\
+        +inference.input_pdb="\${PWD}/${input_pdb.name}" \\
         +inference.output_prefix="\${PWD}/${prefix}_RFD" \\
         +inference.design_startnum=${design_idx} \\
         +inference.schedule_directory_path="\${SCHEDULE_DIR}" \\

@@ -37,13 +37,15 @@ workflow FOLDFLOW_PIPELINE {
     log.info paramsSummaryLog(workflow)
     
     // Create design index channel
+    def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
     def design_indices = channel.of(0..(params.num_designs - 1))
-        .map { idx ->
+        .combine(ch_input_pdb)
+        .map { idx, pdb ->
             def meta = [
                 id: params.output_prefix ?: "design",
                 design_idx: idx
             ]
-            tuple(meta, idx)
+            tuple(meta, idx, pdb)
         }
     
     // Run main workflow

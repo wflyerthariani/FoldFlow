@@ -16,7 +16,7 @@ include { ALPHAFOLD    } from '../modules/local/alphafold/main'
 
 workflow FOLDFLOW {
     take:
-    design_indices // channel: [ val(meta), val(design_idx) ]
+    design_indices // channel: [ val(meta), val(design_idx), path(input_pdb) ]
 
     main:
     def ch_versions = channel.empty()
