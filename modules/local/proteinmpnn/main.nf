@@ -4,8 +4,8 @@ process PROTEINMPNN {
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? params.mpnn_sif_path ?: 'docker://proteinmpnn/proteinmpnn:latest'
-        : 'docker.io/proteinmpnn/proteinmpnn:latest'}"
+        ? params.mpnn_sif_path ?: 'docker://rosettacommons/proteinmpnn:latest'
+        : 'docker.io/rosettacommons/proteinmpnn:latest'}"
 
     input:
     tuple val(meta), path(pdb), path(trb)
@@ -37,7 +37,7 @@ process PROTEINMPNN {
     path_for_fixed_positions="\${folder_with_pdbs}/fixed_pdbs.jsonl"
     
     # Parse PDB chains
-    python /opt/ProteinMPNN/helper_scripts/parse_multiple_chains.py \\
+    python /app/proteinmpnn/helper_scripts/parse_multiple_chains.py \\
         --input_path "\${folder_with_pdbs}" \\
         --output_path "\${path_for_parsed_chains}"
     
@@ -48,7 +48,7 @@ process PROTEINMPNN {
         fixed_positions=\$(echo "\${get_fixed}" | grep -- '--fixed_positions' | cut -d'"' -f2)
         
         # Create fixed positions dictionary
-        python /opt/ProteinMPNN/helper_scripts/make_fixed_positions_dict.py \\
+        python /app/proteinmpnn/helper_scripts/make_fixed_positions_dict.py \\
             --input_path="\${path_for_parsed_chains}" \\
             --output_path="\${path_for_fixed_positions}" \\
             --chain_list "\${chains_to_design}" \\
@@ -67,7 +67,7 @@ process PROTEINMPNN {
     fi
     
     # Run ProteinMPNN - Nextflow handles container execution
-    python /opt/ProteinMPNN/protein_mpnn_run.py \\
+    python /app/proteinmpnn/protein_mpnn_run.py \\
         --jsonl_path "\${path_for_parsed_chains}" \\
         --out_folder "\${output_dir}" \\
         \${fixed_pos_arg} \\

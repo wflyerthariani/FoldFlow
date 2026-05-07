@@ -1,18 +1,41 @@
 import os
 from pathlib import Path
-from Bio import SeqIO
 import argparse
+
+def parse_fasta(fasta_path):
+    """Simple FASTA parser without BioPython dependency."""
+    records = []
+    current_header = None
+    current_seq = []
+    
+    with open(fasta_path, 'r') as f:
+        for line in f:
+            line = line.rstrip('\n')
+            if line.startswith('>'):
+                # Save previous record
+                if current_header is not None:
+                    records.append((current_header, ''.join(current_seq)))
+                current_header = line[1:]  # Remove '>'
+                current_seq = []
+            else:
+                current_seq.append(line)
+        
+        # Save last record
+        if current_header is not None:
+            records.append((current_header, ''.join(current_seq)))
+    
+    return records
 
 def split_fasta_file(fasta_path: Path, output_dir: Path):
     base_name = fasta_path.stem  # filename without extension
-    records = list(SeqIO.parse(fasta_path, "fasta"))
+    records = parse_fasta(fasta_path)
     
     # Skip the first sequence
-    for i, record in enumerate(records[1:], start=1):
-        out_name = f"{base_name}_{i}.fasta"
+    for i, (header, seq) in enumerate(records[1:], start=1):
+        out_name = f"{base_name}_{i}.fa"
         out_path = output_dir / out_name
         with open(out_path, "w") as f:
-            SeqIO.write(record, f, "fasta")
+            f.write(f">{header}\n{seq}\n")
         print(f"Saved: {out_path}")
 
 def main():
