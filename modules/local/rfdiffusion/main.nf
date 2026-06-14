@@ -2,11 +2,39 @@ process RFDIFFUSION {
     tag "${meta.id}_${meta.design_idx}"
     label 'process_gpu'
 
+    def config_path = params.rfdiff_config_path ?: "${projectDir}/configs"
+    def config_name = params.rfdiff_config_name ?: 'RFdiffusion.yaml'
+    def config_file = new File("${config_path}/${config_name}")
+    def config_text = config_file.exists() ? config_file.text : ''
+    def yaml_value = { String key, String defaultValue ->
+        def matcher = (config_text =~ /(?m)^${java.util.regex.Pattern.quote(key)}\s*:\s*(.+?)\s*$/)
+        if (matcher.find()) {
+            return matcher.group(1).replaceAll(/^[\'"]|[\'"]$/, '')
+        }
+        return defaultValue
+    }
+    def editables_dir = yaml_value('_editables_dir', projectDir.toString())
+    def schedule_dir = yaml_value('_schedule_dir', "${editables_dir}/schedules")
+    def model_dir = yaml_value('_model_dir', "${editables_dir}/models")
+
     // Container support: singularity pulls from docker://, docker uses Docker Hub image
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? params.rfdiff_sif_path ?: 'docker://rosettacommons/rfdiffusion'
+        ? 'docker://rosettacommons/rfdiffusion'
         : 'rosettacommons/rfdiffusion'}"
+    containerOptions {
+        if (workflow.containerEngine != 'singularity') {
+            return ''
+        }
+        def binds = []
+        if (schedule_dir) {
+            binds << "--bind ${schedule_dir}:${schedule_dir}"
+        }
+        if (model_dir) {
+            binds << "--bind ${model_dir}:${model_dir}"
+        }
+        binds.join(' ')
+    }
 
     input:
     tuple val(meta), val(design_idx), path(input_pdb)
@@ -22,13 +50,6 @@ process RFDIFFUSION {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def config_path = params.rfdiff_config_path ?: params.config_dir ?: '.'
-    def config_name = params.rfdiff_config_name ?: 'RFdiffusion.yaml'
-    def editables_dir = params.rfdiff_editables_dir ?: projectDir
-
-    // Construct environment variables
-    def schedule_dir = params.rfdiff_editables_dir ? "${params.rfdiff_editables_dir}/schedules" : "${editables_dir}/schedules"
-    def model_dir = params.rfdiff_editables_dir ? "${params.rfdiff_editables_dir}/models" : "${editables_dir}/models"
 
     """
     # Set up environment variables

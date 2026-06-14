@@ -2,9 +2,20 @@ process PROTEINMPNN {
     tag "${meta.id}"
     label 'process_gpu'
 
+    def config_path = params.mpnn_config_path ?: "${projectDir}/configs"
+    def config_name = params.mpnn_config_name ?: 'MPNN.yaml'
+    def config_file = new File("${config_path}/${config_name}")
+    def config_text = config_file.exists() ? config_file.text : ''
+    def yaml_value = { String key, String defaultValue ->
+        def matcher = (config_text =~ /(?m)^${java.util.regex.Pattern.quote(key)}\s*:\s*(.+?)\s*$/)
+        if (matcher.find()) {
+            return matcher.group(1).replaceAll(/^[\'"]|[\'"]$/, '')
+        }
+        return defaultValue
+    }
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? params.mpnn_sif_path ?: 'docker://rosettacommons/proteinmpnn:latest'
+        ? 'docker://rosettacommons/proteinmpnn:latest'
         : 'docker.io/rosettacommons/proteinmpnn:latest'}"
 
     input:
@@ -20,9 +31,7 @@ process PROTEINMPNN {
     script:
     def args = task.ext.args ?: ''
     def num_sequences = params.mpnn_num_sequences ?: 2
-    def config_path = params.mpnn_config_path ?: params.config_dir ?: '.'
-    def config_name = params.mpnn_config_name ?: 'MPNN.yaml'
-    def helper_dir = params.helper_dir ?: './bin'
+    def helper_dir = "${projectDir}/bin"
 
     """
     # Create working directories

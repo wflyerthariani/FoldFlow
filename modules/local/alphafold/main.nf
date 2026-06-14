@@ -3,7 +3,9 @@ process ALPHAFOLD {
     label 'process_gpu'
     label 'process_high_memory'
 
-    def config_file = new File("${projectDir}/configs/AlphaFold.yaml")
+    def config_path = params.alphafold_config_path ?: "${projectDir}/configs"
+    def config_name = params.alphafold_config_name ?: 'AlphaFold.yaml'
+    def config_file = new File("${config_path}/${config_name}")
     def config_text = config_file.exists() ? config_file.text : ''
     def yaml_value = { String key, String defaultValue ->
         def matcher = (config_text =~ /(?m)^${java.util.regex.Pattern.quote(key)}\s*:\s*(.+?)\s*$/)
@@ -13,7 +15,6 @@ process ALPHAFOLD {
         return defaultValue
     }
     def data_dir = yaml_value('_data_dir', '/data')
-    def sif_path = yaml_value('_sif_path', 'docker://catgumag/alphafold:2.3.0')
     def cuda_lib_dir = yaml_value('_cuda_lib_dir', '')
     def db_preset = yaml_value('db_preset', 'full_dbs')
     def model_preset = yaml_value('model_preset', 'monomer')
@@ -23,7 +24,7 @@ process ALPHAFOLD {
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? sif_path
+        ? 'docker://catgumag/alphafold:2.3.0'
         : 'docker.io/catgumag/alphafold:2.3.0'}"
     containerOptions {
         if (workflow.containerEngine != 'singularity') {
@@ -62,7 +63,7 @@ process ALPHAFOLD {
     # Validate that AlphaFold data directory is visible from inside the container.
     if [ ! -d "${data_dir}" ]; then
         echo "ERROR: AlphaFold data directory not accessible in container: ${data_dir}" >&2
-        echo "Set _data_dir in configs/AlphaFold.yaml to a valid host path; this module bind-mounts it automatically for Singularity." >&2
+        echo "Set _data_dir in ${config_path}/${config_name} to a valid host path; this module bind-mounts it automatically for Singularity." >&2
         exit 1
     fi
 

@@ -1,3 +1,8 @@
+# Runtime and container settings
+_editables_dir: /ibex/user/x_thariaa/mark_test/FoldFlow
+_schedule_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/schedules
+_model_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/models
+
 # Base inference Configuration.
 
 inference:

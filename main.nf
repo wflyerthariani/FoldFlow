@@ -38,7 +38,8 @@ workflow FOLDFLOW_PIPELINE {
     
     // Create design index channel
     def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
-    def design_indices = channel.of(0..(params.num_designs - 1))
+    def num_designs = (params.rfdiff_num_designs ?: params.num_designs ?: 3) as Integer
+    def design_indices = channel.of(0..(num_designs - 1))
         .combine(ch_input_pdb)
         .map { idx, pdb ->
             def meta = [
