@@ -44,6 +44,8 @@ def yaml_to_args(yaml_file):
 
     args = []
     for key, value in params.items():
+        if key.startswith('_'):
+            continue
         flag = f"--{key}"
         if isinstance(value, bool):
             if value:
