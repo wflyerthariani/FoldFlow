@@ -55,6 +55,8 @@ process ALPHAFOLD {
     script:
     def args = task.ext.args ?: ''
     def output_dir = "AlphaFoldresults"
+    def tool_tag = task.ext.tool_name ?: 'alphafold'
+    def lineage = meta.lineage ?: fasta.baseName
 
     """
     # Create output directory
@@ -158,6 +160,17 @@ process ALPHAFOLD {
     find ${output_dir} -name "*scores*.json" -exec mv {} . \\; 2>/dev/null || true
     find ${output_dir} -name "timings.json" -exec mv {} . \\; 2>/dev/null || true
 
+    # Append module name so outputs are traceable to the generating tool.
+    for f in *.pdb; do
+        [ -f "\$f" ] || continue
+        mv "\$f" "\${f%.pdb}_${lineage}_alphafold_1_${tool_tag}.pdb"
+    done
+
+    for f in *.json; do
+        [ -f "\$f" ] || continue
+        mv "\$f" "\${f%.json}_${lineage}_alphafold_1_${tool_tag}.json"
+    done
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         alphafold: \$(python -c "import sys; print(sys.version.split()[0])" 2>/dev/null || echo "unknown")
@@ -167,10 +180,12 @@ process ALPHAFOLD {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tool_tag = task.ext.tool_name ?: 'alphafold'
+    def lineage = meta.lineage ?: 'rfdiffusion_1_mpnn_1'
     """
-    touch ${prefix}_model_1.pdb
-    touch ${prefix}_scores.json
-    touch timings.json
+    touch ${prefix}_model_1_${lineage}_alphafold_1_${tool_tag}.pdb
+    touch ${prefix}_scores_${lineage}_alphafold_1_${tool_tag}.json
+    touch timings_${lineage}_alphafold_1_${tool_tag}.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

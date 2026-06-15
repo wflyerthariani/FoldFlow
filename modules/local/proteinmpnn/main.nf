@@ -32,6 +32,8 @@ process PROTEINMPNN {
     def args = task.ext.args ?: ''
     def num_sequences = params.mpnn_num_sequences ?: 2
     def helper_dir = "${projectDir}/bin"
+    def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
+    def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
 
     """
     # Create working directories
@@ -98,6 +100,14 @@ process PROTEINMPNN {
         [ -f "\$f" ] && mv "\$f" "\${f%.fasta}.fa"
     done
 
+    # Append module name so outputs are traceable to the generating tool.
+    mpnn_counter=1
+    for f in *.fa; do
+        [ -f "\$f" ] || continue
+        mv "\$f" "${lineage}_mpnn_\${mpnn_counter}_${tool_tag}.fa"
+        mpnn_counter=\$((mpnn_counter + 1))
+    done
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         proteinmpnn: \$(python -c "import sys; print(sys.version.split()[0])" 2>/dev/null || echo "unknown")
@@ -108,10 +118,12 @@ process PROTEINMPNN {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def num_sequences = params.mpnn_num_sequences ?: 2
+    def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
+    def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
     """
     for i in \$(seq 1 ${num_sequences}); do
-        echo ">${prefix}_seq\${i}" > ${prefix}_seq\${i}.fa
-        echo "ACDEFGHIKLMNPQRSTVWY" >> ${prefix}_seq\${i}.fa
+        echo ">${prefix}_seq\${i}" > ${lineage}_mpnn_\${i}_${tool_tag}.fa
+        echo "ACDEFGHIKLMNPQRSTVWY" >> ${lineage}_mpnn_\${i}_${tool_tag}.fa
     done
 
     cat <<-END_VERSIONS > versions.yml

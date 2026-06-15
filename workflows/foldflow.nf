@@ -50,6 +50,10 @@ workflow FOLDFLOW {
         .map { meta, fasta ->
             def seq_meta = meta.clone()
             seq_meta.seq_id = fasta.baseName
+            def matcher = (fasta.baseName =~ /^(.*_mpnn_\d+)_([^_]+)$/)
+            if (matcher.find()) {
+                seq_meta.lineage = matcher.group(1)
+            }
             tuple(seq_meta, fasta)
         }
     

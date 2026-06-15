@@ -42,9 +42,11 @@ workflow FOLDFLOW_PIPELINE {
     def design_indices = channel.of(0..(num_designs - 1))
         .combine(ch_input_pdb)
         .map { idx, pdb ->
+            def rfd_idx = (idx as Integer) + 1
             def meta = [
                 id: params.output_prefix ?: "design",
-                design_idx: idx
+                design_idx: idx,
+                lineage: "rfdiffusion_${rfd_idx}"
             ]
             tuple(meta, idx, pdb)
         }
@@ -72,10 +74,10 @@ workflow FOLDFLOW_PIPELINE {
 workflow {
     FOLDFLOW_PIPELINE()
     
-    workflow.onComplete {
-        log.info "Pipeline completed at: ${workflow.complete}"
-        log.info "Execution status: ${workflow.success ? 'OK' : 'failed'}"
-        log.info "Execution duration: ${workflow.duration}"
+    workflow.onComplete { meta ->
+        log.info "Pipeline completed at: ${meta?.complete ?: 'unknown'}"
+        log.info "Execution status: ${(meta?.success != null && meta.success) ? 'OK' : 'failed'}"
+        log.info "Execution duration: ${meta?.duration ?: 'unknown'}"
     }
 }
 

@@ -40,8 +40,8 @@ process RFDIFFUSION {
     tuple val(meta), val(design_idx), path(input_pdb)
 
     output:
-    tuple val(meta), path("*.pdb"), emit: structures
-    tuple val(meta), path("*.trb"), emit: trajectories, optional: true
+    tuple val(meta), path("*_rfdiffusion.pdb"), emit: structures
+    tuple val(meta), path("*_rfdiffusion.trb"), emit: trajectories, optional: true
     path "versions.yml", emit: versions
 
     when:
@@ -50,6 +50,8 @@ process RFDIFFUSION {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tool_tag = task.ext.tool_name ?: 'rfdiffusion'
+    def lineage = meta.lineage ?: "rfdiffusion_${(design_idx as Integer) + 1}"
 
     """
     # Set up environment variables
@@ -67,6 +69,22 @@ process RFDIFFUSION {
         +inference.model_directory_path="\${MODEL_DIR}" \\
         ${args}
 
+    # Remove staged input PDB symlink/copy so it cannot be emitted as a process output.
+    rm -f "${input_pdb.name}" || true
+
+    # Append module name so outputs are traceable to the generating tool.
+    for f in *.pdb; do
+        [ -f "\$f" ] || continue
+        [[ "\$f" == *"_${lineage}_${tool_tag}.pdb" ]] && continue
+        mv "\$f" "\${f%.pdb}_${lineage}_${tool_tag}.pdb"
+    done
+
+    for f in *.trb; do
+        [ -f "\$f" ] || continue
+        [[ "\$f" == *"_${lineage}_${tool_tag}.trb" ]] && continue
+        mv "\$f" "\${f%.trb}_${lineage}_${tool_tag}.trb"
+    done
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         rfdiffusion: \$(python -c "import sys; print(sys.version.split()[0])" 2>/dev/null || echo "unknown")
@@ -76,9 +94,11 @@ process RFDIFFUSION {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tool_tag = task.ext.tool_name ?: 'rfdiffusion'
+    def lineage = meta.lineage ?: "rfdiffusion_${(design_idx as Integer) + 1}"
     """
-    touch ${prefix}_RFD_${design_idx}.pdb
-    touch ${prefix}_RFD_${design_idx}.trb
+    touch ${prefix}_RFD_${design_idx}_${lineage}_${tool_tag}.pdb
+    touch ${prefix}_RFD_${design_idx}_${lineage}_${tool_tag}.trb
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
