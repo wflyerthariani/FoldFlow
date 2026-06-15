@@ -41,7 +41,7 @@ process RFDIFFUSION {
 
     output:
     tuple val(meta), path("*_rfdiffusion.pdb"), emit: structures
-    tuple val(meta), path("*_rfdiffusion.trb"), emit: trajectories, optional: true
+    tuple val(meta), path("*_rfdiffusion.fixed_regions"), emit: fixed_regions
     path "versions.yml", emit: versions
 
     when:
@@ -52,6 +52,7 @@ process RFDIFFUSION {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def tool_tag = task.ext.tool_name ?: 'rfdiffusion'
     def lineage = meta.lineage ?: "rfdiffusion_${(design_idx as Integer) + 1}"
+    def helper_dir = params.helper_dir ?: "${projectDir}/bin"
 
     """
     # Set up environment variables
@@ -79,11 +80,25 @@ process RFDIFFUSION {
         mv "\$f" "\${f%.pdb}_${lineage}_${tool_tag}.pdb"
     done
 
+    # Extract fixed regions from TRB into a tool-agnostic file, then discard the TRB.
+    # Any upstream tool only needs to produce a PDB + a .fixed_regions file in this format.
+    fixed_regions_file=""
     for f in *.trb; do
         [ -f "\$f" ] || continue
-        [[ "\$f" == *"_${lineage}_${tool_tag}.trb" ]] && continue
-        mv "\$f" "\${f%.trb}_${lineage}_${tool_tag}.trb"
+        base="\${f%.trb}_${lineage}_${tool_tag}"
+        python ${helper_dir}/reformat_fixed_residues.py --input-file "\$f" > "\${base}.fixed_regions" 2>/dev/null \
+            || touch "\${base}.fixed_regions"
+        fixed_regions_file="\${base}.fixed_regions"
+        rm -f "\$f"
     done
+    # If no TRB was produced, create an empty fixed_regions alongside the PDB.
+    if [ -z "\$fixed_regions_file" ]; then
+        for f in *_${lineage}_${tool_tag}.pdb; do
+            [ -f "\$f" ] || continue
+            touch "\${f%.pdb}.fixed_regions"
+            break
+        done
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -98,7 +113,7 @@ process RFDIFFUSION {
     def lineage = meta.lineage ?: "rfdiffusion_${(design_idx as Integer) + 1}"
     """
     touch ${prefix}_RFD_${design_idx}_${lineage}_${tool_tag}.pdb
-    touch ${prefix}_RFD_${design_idx}_${lineage}_${tool_tag}.trb
+    touch ${prefix}_RFD_${design_idx}_${lineage}_${tool_tag}.fixed_regions
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

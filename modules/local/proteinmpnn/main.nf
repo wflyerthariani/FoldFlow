@@ -19,7 +19,7 @@ process PROTEINMPNN {
         : 'docker.io/rosettacommons/proteinmpnn:latest'}"
 
     input:
-    tuple val(meta), path(pdb), path(trb)
+    tuple val(meta), path(pdb), path(fixed_regions)
 
     output:
     tuple val(meta), path("*.fa"), emit: sequences
@@ -52,20 +52,24 @@ process PROTEINMPNN {
         --input_path "\${folder_with_pdbs}" \\
         --output_path "\${path_for_parsed_chains}"
     
-    # Extract fixed residues from trajectory file
-    if [ -f "${trb}" ]; then
-        get_fixed=\$(python ${helper_dir}/reformat_fixed_residues.py --input-file ${trb})
-        chains_to_design=\$(echo "\${get_fixed}" | grep -- '--chains_to_design' | cut -d'"' -f2)
-        fixed_positions=\$(echo "\${get_fixed}" | grep -- '--fixed_positions' | cut -d'"' -f2)
+    # Read fixed regions from the tool-agnostic fixed_regions file.
+    # This file is produced by any upstream stage tool; no TRB dependency.
+    if [ -f "${fixed_regions}" ] && [ -s "${fixed_regions}" ]; then
+        chains_to_design=\$(grep -- '--chains_to_design' "${fixed_regions}" | cut -d'"' -f2)
+        fixed_positions=\$(grep -- '--fixed_positions' "${fixed_regions}" | cut -d'"' -f2)
         
-        # Create fixed positions dictionary
-        python /app/proteinmpnn/helper_scripts/make_fixed_positions_dict.py \\
-            --input_path="\${path_for_parsed_chains}" \\
-            --output_path="\${path_for_fixed_positions}" \\
-            --chain_list "\${chains_to_design}" \\
-            --position_list "\${fixed_positions}"
-        
-        fixed_pos_arg="--fixed_positions_jsonl \${path_for_fixed_positions}"
+        if [ -n "\$chains_to_design" ]; then
+            # Create fixed positions dictionary
+            python /app/proteinmpnn/helper_scripts/make_fixed_positions_dict.py \\
+                --input_path="\${path_for_parsed_chains}" \\
+                --output_path="\${path_for_fixed_positions}" \\
+                --chain_list "\${chains_to_design}" \\
+                --position_list "\${fixed_positions}"
+            
+            fixed_pos_arg="--fixed_positions_jsonl \${path_for_fixed_positions}"
+        else
+            fixed_pos_arg=""
+        fi
     else
         fixed_pos_arg=""
     fi

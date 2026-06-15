@@ -46,7 +46,7 @@ process ALPHAFOLD {
     output:
     tuple val(meta), path("*.pdb"), emit: structures
     tuple val(meta), path("*.json"), emit: scores, optional: true
-    tuple val(meta), path("timings.json"), emit: timings, optional: true
+    tuple val(meta), path("*timings*.json"), emit: timings, optional: true
     path "versions.yml", emit: versions
 
     when:

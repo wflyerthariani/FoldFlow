@@ -32,9 +32,9 @@ workflow FOLDFLOW {
     //
     // MODULE: ProteinMPNN - Design sequences for the generated backbones
     //
-    // Combine PDB and TRB files by meta
+    // Combine PDB and fixed_regions files by meta
     def mpnn_input = RFDIFFUSION.out.structures
-        .join(RFDIFFUSION.out.trajectories, by: 0, remainder: true)
+        .join(RFDIFFUSION.out.fixed_regions, by: 0)
     
     PROTEINMPNN(
         mpnn_input
@@ -63,12 +63,12 @@ workflow FOLDFLOW {
     ch_versions = ch_versions.mix(ALPHAFOLD.out.versions.first())
 
     emit:
-    rfdiffusion_structures = RFDIFFUSION.out.structures
-    rfdiffusion_trajectories = RFDIFFUSION.out.trajectories
-    mpnn_sequences = PROTEINMPNN.out.sequences
-    alphafold_structures = ALPHAFOLD.out.structures
-    alphafold_scores = ALPHAFOLD.out.scores
-    versions = ch_versions
+    rfdiffusion_structures  = RFDIFFUSION.out.structures
+    rfdiffusion_fixed_regions = RFDIFFUSION.out.fixed_regions
+    mpnn_sequences          = PROTEINMPNN.out.sequences
+    alphafold_structures    = ALPHAFOLD.out.structures
+    alphafold_scores        = ALPHAFOLD.out.scores
+    versions                = ch_versions
 }
 
 /*

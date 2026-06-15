@@ -57,9 +57,9 @@ workflow FOLDFLOW_PIPELINE {
     )
     
     emit:
-    rfdiffusion_structures = FOLDFLOW.out.rfdiffusion_structures
-    rfdiffusion_trajectories = FOLDFLOW.out.rfdiffusion_trajectories
-    mpnn_sequences = FOLDFLOW.out.mpnn_sequences
+    rfdiffusion_structures   = FOLDFLOW.out.rfdiffusion_structures
+    rfdiffusion_fixed_regions = FOLDFLOW.out.rfdiffusion_fixed_regions
+    mpnn_sequences            = FOLDFLOW.out.mpnn_sequences
     alphafold_structures = FOLDFLOW.out.alphafold_structures
     alphafold_scores = FOLDFLOW.out.alphafold_scores
     versions = FOLDFLOW.out.versions
@@ -74,10 +74,10 @@ workflow FOLDFLOW_PIPELINE {
 workflow {
     FOLDFLOW_PIPELINE()
     
-    workflow.onComplete { meta ->
-        log.info "Pipeline completed at: ${meta?.complete ?: 'unknown'}"
-        log.info "Execution status: ${(meta?.success != null && meta.success) ? 'OK' : 'failed'}"
-        log.info "Execution duration: ${meta?.duration ?: 'unknown'}"
+    workflow.onComplete {
+        log.info "Pipeline completed at: ${complete ?: 'unknown'}"
+        log.info "Execution status: ${success ? 'OK' : 'failed'}"
+        log.info "Execution duration: ${duration ?: 'unknown'}"
     }
 }
 
