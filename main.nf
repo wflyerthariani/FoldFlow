@@ -37,13 +37,18 @@ workflow FOLDFLOW_PIPELINE {
     log.info paramsSummaryLog(workflow)
     
     // Create design index channel
-    def design_indices = channel.of(0..(params.num_designs - 1))
-        .map { idx ->
+    def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
+    def num_designs = (params.rfdiff_num_designs ?: params.num_designs ?: 3) as Integer
+    def design_indices = channel.of(0..(num_designs - 1))
+        .combine(ch_input_pdb)
+        .map { idx, pdb ->
+            def rfd_idx = (idx as Integer) + 1
             def meta = [
                 id: params.output_prefix ?: "design",
-                design_idx: idx
+                design_idx: idx,
+                lineage: "rfdiffusion_${rfd_idx}"
             ]
-            tuple(meta, idx)
+            tuple(meta, idx, pdb)
         }
     
     // Run main workflow
@@ -52,9 +57,9 @@ workflow FOLDFLOW_PIPELINE {
     )
     
     emit:
-    rfdiffusion_structures = FOLDFLOW.out.rfdiffusion_structures
-    rfdiffusion_trajectories = FOLDFLOW.out.rfdiffusion_trajectories
-    mpnn_sequences = FOLDFLOW.out.mpnn_sequences
+    rfdiffusion_structures   = FOLDFLOW.out.rfdiffusion_structures
+    rfdiffusion_fixed_regions = FOLDFLOW.out.rfdiffusion_fixed_regions
+    mpnn_sequences            = FOLDFLOW.out.mpnn_sequences
     alphafold_structures = FOLDFLOW.out.alphafold_structures
     alphafold_scores = FOLDFLOW.out.alphafold_scores
     versions = FOLDFLOW.out.versions
@@ -70,9 +75,9 @@ workflow {
     FOLDFLOW_PIPELINE()
     
     workflow.onComplete {
-        log.info "Pipeline completed at: ${workflow.complete}"
-        log.info "Execution status: ${workflow.success ? 'OK' : 'failed'}"
-        log.info "Execution duration: ${workflow.duration}"
+        log.info "Pipeline completed at: ${complete ?: 'unknown'}"
+        log.info "Execution status: ${success ? 'OK' : 'failed'}"
+        log.info "Execution duration: ${duration ?: 'unknown'}"
     }
 }
 

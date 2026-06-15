@@ -2,13 +2,24 @@ process PROTEINMPNN {
     tag "${meta.id}"
     label 'process_gpu'
 
+    def config_path = params.mpnn_config_path ?: "${projectDir}/configs"
+    def config_name = params.mpnn_config_name ?: 'MPNN.yaml'
+    def config_file = new File("${config_path}/${config_name}")
+    def config_text = config_file.exists() ? config_file.text : ''
+    def yaml_value = { String key, String defaultValue ->
+        def matcher = (config_text =~ /(?m)^${java.util.regex.Pattern.quote(key)}\s*:\s*(.+?)\s*$/)
+        if (matcher.find()) {
+            return matcher.group(1).replaceAll(/^[\'"]|[\'"]$/, '')
+        }
+        return defaultValue
+    }
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? params.mpnn_sif_path ?: 'docker://proteinmpnn/proteinmpnn:latest'
-        : 'docker.io/proteinmpnn/proteinmpnn:latest'}"
+        ? 'docker://rosettacommons/proteinmpnn:latest'
+        : 'docker.io/rosettacommons/proteinmpnn:latest'}"
 
     input:
-    tuple val(meta), path(pdb), path(trb)
+    tuple val(meta), path(pdb), path(fixed_regions)
 
     output:
     tuple val(meta), path("*.fa"), emit: sequences
@@ -20,9 +31,9 @@ process PROTEINMPNN {
     script:
     def args = task.ext.args ?: ''
     def num_sequences = params.mpnn_num_sequences ?: 2
-    def config_path = params.mpnn_config_path ?: params.config_dir ?: '.'
-    def config_name = params.mpnn_config_name ?: 'MPNN.yaml'
-    def helper_dir = params.helper_dir ?: './bin'
+    def helper_dir = "${projectDir}/bin"
+    def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
+    def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
 
     """
     # Create working directories
@@ -37,24 +48,28 @@ process PROTEINMPNN {
     path_for_fixed_positions="\${folder_with_pdbs}/fixed_pdbs.jsonl"
     
     # Parse PDB chains
-    python /opt/ProteinMPNN/helper_scripts/parse_multiple_chains.py \\
+    python /app/proteinmpnn/helper_scripts/parse_multiple_chains.py \\
         --input_path "\${folder_with_pdbs}" \\
         --output_path "\${path_for_parsed_chains}"
     
-    # Extract fixed residues from trajectory file
-    if [ -f "${trb}" ]; then
-        get_fixed=\$(python ${helper_dir}/reformat_fixed_residues.py --input-file ${trb})
-        chains_to_design=\$(echo "\${get_fixed}" | grep -- '--chains_to_design' | cut -d'"' -f2)
-        fixed_positions=\$(echo "\${get_fixed}" | grep -- '--fixed_positions' | cut -d'"' -f2)
+    # Read fixed regions from the tool-agnostic fixed_regions file.
+    # This file is produced by any upstream stage tool; no TRB dependency.
+    if [ -f "${fixed_regions}" ] && [ -s "${fixed_regions}" ]; then
+        chains_to_design=\$(grep -- '--chains_to_design' "${fixed_regions}" | cut -d'"' -f2)
+        fixed_positions=\$(grep -- '--fixed_positions' "${fixed_regions}" | cut -d'"' -f2)
         
-        # Create fixed positions dictionary
-        python /opt/ProteinMPNN/helper_scripts/make_fixed_positions_dict.py \\
-            --input_path="\${path_for_parsed_chains}" \\
-            --output_path="\${path_for_fixed_positions}" \\
-            --chain_list "\${chains_to_design}" \\
-            --position_list "\${fixed_positions}"
-        
-        fixed_pos_arg="--fixed_positions_jsonl \${path_for_fixed_positions}"
+        if [ -n "\$chains_to_design" ]; then
+            # Create fixed positions dictionary
+            python /app/proteinmpnn/helper_scripts/make_fixed_positions_dict.py \\
+                --input_path="\${path_for_parsed_chains}" \\
+                --output_path="\${path_for_fixed_positions}" \\
+                --chain_list "\${chains_to_design}" \\
+                --position_list "\${fixed_positions}"
+            
+            fixed_pos_arg="--fixed_positions_jsonl \${path_for_fixed_positions}"
+        else
+            fixed_pos_arg=""
+        fi
     else
         fixed_pos_arg=""
     fi
@@ -67,7 +82,7 @@ process PROTEINMPNN {
     fi
     
     # Run ProteinMPNN - Nextflow handles container execution
-    python /opt/ProteinMPNN/protein_mpnn_run.py \\
+    python /app/proteinmpnn/protein_mpnn_run.py \\
         --jsonl_path "\${path_for_parsed_chains}" \\
         --out_folder "\${output_dir}" \\
         \${fixed_pos_arg} \\
@@ -89,6 +104,14 @@ process PROTEINMPNN {
         [ -f "\$f" ] && mv "\$f" "\${f%.fasta}.fa"
     done
 
+    # Append module name so outputs are traceable to the generating tool.
+    mpnn_counter=1
+    for f in *.fa; do
+        [ -f "\$f" ] || continue
+        mv "\$f" "${lineage}_mpnn_\${mpnn_counter}_${tool_tag}.fa"
+        mpnn_counter=\$((mpnn_counter + 1))
+    done
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         proteinmpnn: \$(python -c "import sys; print(sys.version.split()[0])" 2>/dev/null || echo "unknown")
@@ -99,10 +122,12 @@ process PROTEINMPNN {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def num_sequences = params.mpnn_num_sequences ?: 2
+    def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
+    def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
     """
     for i in \$(seq 1 ${num_sequences}); do
-        echo ">${prefix}_seq\${i}" > ${prefix}_seq\${i}.fa
-        echo "ACDEFGHIKLMNPQRSTVWY" >> ${prefix}_seq\${i}.fa
+        echo ">${prefix}_seq\${i}" > ${lineage}_mpnn_\${i}_${tool_tag}.fa
+        echo "ACDEFGHIKLMNPQRSTVWY" >> ${lineage}_mpnn_\${i}_${tool_tag}.fa
     done
 
     cat <<-END_VERSIONS > versions.yml

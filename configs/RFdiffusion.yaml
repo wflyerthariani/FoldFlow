@@ -1,7 +1,12 @@
+# Runtime and container settings
+_editables_dir: /ibex/user/x_thariaa/mark_test/FoldFlow
+_schedule_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/schedules
+_model_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/models
+
 # Base inference Configuration.
 
 inference:
-  input_pdb: /ibex/user/thariaaa/FoldFlow/6px6.pdb
+  num_designs: 1
   ckpt_override_path: null
   symmetry: null
   recenter: True
@@ -16,8 +21,6 @@ inference:
   final_step: 1
   deterministic: False
   trb_save_ckpt_path: null
-  schedule_directory_path: null
-  model_directory_path: null
   cyclic: False 
   cyc_chains: 'a'
 
