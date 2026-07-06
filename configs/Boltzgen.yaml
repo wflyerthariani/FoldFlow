@@ -1,0 +1,18 @@
+# Runtime and container settings
+_editables_dir: /ibex/user/x_thariaa/mark_test/FoldFlow
+_model_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/weights/boltzgen/models
+_num_designs: 1
+
+# BoltzGen design specification.
+# 'STAGED_INPUT_PDB' is replaced at runtime with the actual staged input PDB filename.
+# See https://github.com/HannesStark/boltzgen for full YAML schema documentation.
+
+entities:
+  - protein:
+      id: A
+      sequence: 50..100
+  - file:
+      path: STAGED_INPUT_PDB
+      include:
+        - chain:
+            id: A

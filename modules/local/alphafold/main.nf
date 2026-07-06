@@ -138,9 +138,24 @@ process ALPHAFOLD {
         export NVIDIA_VISIBLE_DEVICES=""
     fi
     
+    # ProteinMPNN uses '/' as a chain separator for multi-chain designs.
+    # AlphaFold monomer only accepts single-chain FASTA, so extract the first chain.
+    clean_fasta="${fasta}"
+    if grep -q '/' "${fasta}"; then
+        python3 -c "
+with open('${fasta}') as f:
+    lines = f.read().strip().split('\\n')
+header = lines[0]
+seq = ''.join(lines[1:]).split('/')[0]
+print(header)
+print(seq)
+" > single_chain.fa
+        clean_fasta="single_chain.fa"
+    fi
+
     # Run AlphaFold
     /app/run_alphafold.sh \\
-        --fasta_paths=${fasta} \\
+        --fasta_paths=\${clean_fasta} \\
         --data_dir=${data_dir} \\
         --output_dir=${output_dir}/ \\
         --db_preset=${db_preset} \\

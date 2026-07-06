@@ -39,14 +39,15 @@ workflow FOLDFLOW_PIPELINE {
     // Create design index channel
     def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
     def num_designs = (params.rfdiff_num_designs ?: params.num_designs ?: 3) as Integer
+    def design_tool = params.design_tool ?: 'rfdiffusion'
     def design_indices = channel.of(0..(num_designs - 1))
         .combine(ch_input_pdb)
         .map { idx, pdb ->
-            def rfd_idx = (idx as Integer) + 1
+            def design_num = (idx as Integer) + 1
             def meta = [
                 id: params.output_prefix ?: "design",
                 design_idx: idx,
-                lineage: "rfdiffusion_${rfd_idx}"
+                lineage: "${design_tool}_${design_num}"
             ]
             tuple(meta, idx, pdb)
         }
@@ -57,12 +58,12 @@ workflow FOLDFLOW_PIPELINE {
     )
     
     emit:
-    rfdiffusion_structures   = FOLDFLOW.out.rfdiffusion_structures
-    rfdiffusion_fixed_regions = FOLDFLOW.out.rfdiffusion_fixed_regions
-    mpnn_sequences            = FOLDFLOW.out.mpnn_sequences
+    design_structures    = FOLDFLOW.out.design_structures
+    design_fixed_regions = FOLDFLOW.out.design_fixed_regions
+    mpnn_sequences       = FOLDFLOW.out.mpnn_sequences
     alphafold_structures = FOLDFLOW.out.alphafold_structures
-    alphafold_scores = FOLDFLOW.out.alphafold_scores
-    versions = FOLDFLOW.out.versions
+    alphafold_scores     = FOLDFLOW.out.alphafold_scores
+    versions             = FOLDFLOW.out.versions
 }
 
 /*

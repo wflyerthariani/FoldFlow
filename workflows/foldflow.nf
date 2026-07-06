@@ -5,6 +5,7 @@
 */
 
 include { RFDIFFUSION  } from '../modules/local/rfdiffusion/main'
+include { BOLTZGEN     } from '../modules/local/boltzgen/main'
 include { PROTEINMPNN  } from '../modules/local/proteinmpnn/main'
 include { ALPHAFOLD    } from '../modules/local/alphafold/main'
 
@@ -20,21 +21,29 @@ workflow FOLDFLOW {
 
     main:
     def ch_versions = channel.empty()
+    def ch_structures
+    def ch_fixed_regions
 
     //
-    // MODULE: RFdiffusion - Generate protein backbone structures
+    // MODULE: Backbone design — RFdiffusion or BoltzGen, selected via params.design_tool
     //
-    RFDIFFUSION(
-        design_indices
-    )
-    ch_versions = ch_versions.mix(RFDIFFUSION.out.versions)
+    if (params.design_tool == 'boltzgen') {
+        BOLTZGEN(design_indices)
+        ch_versions     = ch_versions.mix(BOLTZGEN.out.versions)
+        ch_structures   = BOLTZGEN.out.structures
+        ch_fixed_regions = BOLTZGEN.out.fixed_regions
+    } else {
+        RFDIFFUSION(design_indices)
+        ch_versions     = ch_versions.mix(RFDIFFUSION.out.versions)
+        ch_structures   = RFDIFFUSION.out.structures
+        ch_fixed_regions = RFDIFFUSION.out.fixed_regions
+    }
 
     //
     // MODULE: ProteinMPNN - Design sequences for the generated backbones
     //
-    // Combine PDB and fixed_regions files by meta
-    def mpnn_input = RFDIFFUSION.out.structures
-        .join(RFDIFFUSION.out.fixed_regions, by: 0)
+    def mpnn_input = ch_structures
+        .join(ch_fixed_regions, by: 0)
     
     PROTEINMPNN(
         mpnn_input
@@ -63,12 +72,12 @@ workflow FOLDFLOW {
     ch_versions = ch_versions.mix(ALPHAFOLD.out.versions.first())
 
     emit:
-    rfdiffusion_structures  = RFDIFFUSION.out.structures
-    rfdiffusion_fixed_regions = RFDIFFUSION.out.fixed_regions
-    mpnn_sequences          = PROTEINMPNN.out.sequences
-    alphafold_structures    = ALPHAFOLD.out.structures
-    alphafold_scores        = ALPHAFOLD.out.scores
-    versions                = ch_versions
+    design_structures    = ch_structures
+    design_fixed_regions = ch_fixed_regions
+    mpnn_sequences       = PROTEINMPNN.out.sequences
+    alphafold_structures = ALPHAFOLD.out.structures
+    alphafold_scores     = ALPHAFOLD.out.scores
+    versions             = ch_versions
 }
 
 /*

@@ -1,0 +1,164 @@
+nextflow_process {
+
+    name "Test Process BOLTZGEN"
+    script "modules/local/boltzgen/main.nf"
+    process "BOLTZGEN"
+
+    test("boltzgen protein binder design") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design' ],
+                    1,
+                    file('tests/data/test.pdb')
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design'
+
+            def pdbFile = path(pdbPath)
+            assert pdbFile.exists()
+            assert pdbFile.fileName.toString().endsWith('.pdb')
+            assert pdbFile.fileName.toString().contains('_BG1_')
+
+            assert process.out.fixed_regions.size() == 1
+
+            assert process.out.versions.size() == 1
+            def versionsYml = path(process.out.versions[0])
+            assert versionsYml.text.contains('BOLTZGEN')
+            assert versionsYml.text.contains('boltzgen')
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    test("boltzgen protein binder design with different index") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design_multi', design_idx: 5 ],
+                    5,
+                    file('tests/data/test.pdb')
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design_multi'
+
+            def pdbFile = path(pdbPath)
+            assert pdbFile.exists()
+            assert pdbFile.fileName.toString().contains('_BG5_')
+
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | boltzgen protein binder design") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design' ],
+                    1,
+                    file('tests/data/test.pdb')
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design'
+
+            def pdbFile = path(pdbPath)
+            assert pdbFile.fileName.toString() == 'test_design_BG1_0_boltzgen_2_boltzgen.pdb'
+
+            assert process.out.fixed_regions.size() == 1
+
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    test("stub | boltzgen protein binder design with different index") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design_multi', design_idx: 10 ],
+                    10,
+                    file('tests/data/test.pdb')
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_design_multi'
+
+            def pdbFile = path(pdbPath)
+            assert pdbFile.fileName.toString() == 'test_design_multi_BG10_0_boltzgen_11_boltzgen.pdb'
+
+            assert process.out.fixed_regions.size() == 1
+
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+}
