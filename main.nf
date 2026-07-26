@@ -39,15 +39,12 @@ workflow FOLDFLOW_PIPELINE {
     // Create design index channel
     def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
     def num_designs = (params.rfdiff_num_designs ?: params.num_designs ?: 3) as Integer
-    def design_tool = params.design_tool ?: 'rfdiffusion'
     def design_indices = channel.of(0..(num_designs - 1))
         .combine(ch_input_pdb)
         .map { idx, pdb ->
-            def design_num = (idx as Integer) + 1
             def meta = [
                 id: params.output_prefix ?: "design",
-                design_idx: idx,
-                lineage: "${design_tool}_${design_num}"
+                design_idx: idx
             ]
             tuple(meta, idx, pdb)
         }

@@ -21,29 +21,37 @@ workflow FOLDFLOW {
 
     main:
     def ch_versions = channel.empty()
-    def ch_structures
-    def ch_fixed_regions
 
-    //
-    // MODULE: Backbone design — RFdiffusion or BoltzGen, selected via params.design_tool
-    //
-    if (params.design_tool == 'boltzgen') {
-        BOLTZGEN(design_indices)
-        ch_versions     = ch_versions.mix(BOLTZGEN.out.versions)
-        ch_structures   = BOLTZGEN.out.structures
-        ch_fixed_regions = BOLTZGEN.out.fixed_regions
-    } else {
-        RFDIFFUSION(design_indices)
-        ch_versions     = ch_versions.mix(RFDIFFUSION.out.versions)
-        ch_structures   = RFDIFFUSION.out.structures
-        ch_fixed_regions = RFDIFFUSION.out.fixed_regions
+    // Stamp each copy of design_indices with the tool-specific lineage before branching.
+    // DSL2 channels can be consumed by multiple operators independently.
+    def rfd_indices = design_indices.map { meta, idx, pdb ->
+        tuple(meta + [lineage: "rfdiffusion_${(idx as Integer) + 1}"], idx, pdb)
+    }
+    def bg_indices = design_indices.map { meta, idx, pdb ->
+        tuple(meta + [lineage: "boltzgen_${(idx as Integer) + 1}"], idx, pdb)
     }
 
     //
-    // MODULE: ProteinMPNN - Design sequences for the generated backbones
+    // MODULE: RFdiffusion — backbone structure generation
     //
-    def mpnn_input = ch_structures
-        .join(ch_fixed_regions, by: 0)
+    RFDIFFUSION(rfd_indices)
+    ch_versions = ch_versions.mix(RFDIFFUSION.out.versions)
+
+    //
+    // MODULE: BoltzGen — backbone structure generation (runs in parallel with RFdiffusion)
+    //
+    BOLTZGEN(bg_indices)
+    ch_versions = ch_versions.mix(BOLTZGEN.out.versions)
+
+    //
+    // MODULE: ProteinMPNN - Design sequences for all generated backbones
+    //
+    def mpnn_input = RFDIFFUSION.out.structures
+        .mix(BOLTZGEN.out.structures)
+        .join(
+            RFDIFFUSION.out.fixed_regions.mix(BOLTZGEN.out.fixed_regions),
+            by: 0
+        )
     
     PROTEINMPNN(
         mpnn_input
@@ -72,8 +80,8 @@ workflow FOLDFLOW {
     ch_versions = ch_versions.mix(ALPHAFOLD.out.versions.first())
 
     emit:
-    design_structures    = ch_structures
-    design_fixed_regions = ch_fixed_regions
+    design_structures    = RFDIFFUSION.out.structures.mix(BOLTZGEN.out.structures)
+    design_fixed_regions = RFDIFFUSION.out.fixed_regions.mix(BOLTZGEN.out.fixed_regions)
     mpnn_sequences       = PROTEINMPNN.out.sequences
     alphafold_structures = ALPHAFOLD.out.structures
     alphafold_scores     = ALPHAFOLD.out.scores
