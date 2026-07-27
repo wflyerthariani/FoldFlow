@@ -1,0 +1,107 @@
+nextflow_process {
+
+    name "Test Process LIGANDMPNN"
+    script "modules/local/ligandmpnn/main.nf"
+    process "LIGANDMPNN"
+
+    test("ligandmpnn sequence design with structure and fixed regions") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_structure', lineage: 'rfdiffusion_1' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.trb")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+            assert process.out.sequences.size() == 1
+            def (meta, fastaPath) = process.out.sequences[0]
+            assert meta.id == 'test_structure'
+            def fastaFiles = fastaPath instanceof List ? fastaPath : [fastaPath]
+            assert fastaFiles.size() > 0
+            fastaFiles.each { fasta ->
+                def fastaFile = path(fasta)
+                assert fastaFile.exists()
+                assert fastaFile.fileName.toString().endsWith('.fa')
+                assert fastaFile.fileName.toString().contains('ligandmpnn')
+                assert fastaFile.text.contains('>')
+            }
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
+        }
+    }
+
+    test("ligandmpnn sequence design with structure only") {
+        tag "fast"
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_structure_no_fixed', lineage: 'boltzgen_1' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    []
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+            assert process.out.sequences.size() == 1
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
+        }
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | ligandmpnn sequence design") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_structure', lineage: 'rfdiffusion_1' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.trb")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+            assert process.out.sequences.size() == 1
+            def (meta, fastaPath) = process.out.sequences[0]
+            def fastaFiles = fastaPath instanceof List ? fastaPath : [fastaPath]
+            fastaFiles.each { fasta ->
+                def fastaFile = path(fasta)
+                assert fastaFile.fileName.toString().endsWith('.fa')
+                assert fastaFile.fileName.toString().contains('ligandmpnn')
+                assert fastaFile.fileName.toString().startsWith('rfdiffusion_1_mpnn_')
+            }
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
+        }
+    }
+}

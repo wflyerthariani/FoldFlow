@@ -1,0 +1,13 @@
+# LigandMPNN runtime settings
+# _model_weights_path: optional — set if Singularity cannot find weights at the default
+#                      container path. The directory will be bind-mounted automatically.
+# _model_weights_path: /path/to/ligandmpnn/weights
+
+# LigandMPNN inference parameters.
+# All non-_ keys are forwarded as CLI flags via bin/yaml_to_args.py.
+model_type: "ligand_mpnn"
+checkpoint_ligand_mpnn: "/app/ligandmpnn/model_params/ligandmpnn_v_32_010_25.pt"
+fasta_seq_separation: "/"
+seed: 0
+batch_size: 1
+temperature: 0.1
