@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img"
+     aria-label="Simplified FoldFlow pipeline: a PDB structure goes in, three stages follow — backbone generation by RFdiffusion or BoltzGen, sequence design by ProteinMPNN or LigandMPNN, validation by AlphaFold 2 or AlphaFold 3 — with PDB, PDB, FASTA and PDB passing between them, producing 48 predicted structures.">
+  <title>FoldFlow pipeline — overview</title>
+  <style>
+    text { font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .eyebrow { font-size: 14px; font-weight: 600; fill: #0c666c; letter-spacing: 2.2px; }
+    .title   { font-size: 56px; font-weight: 600; fill: #121a1e; font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif; }
+    .sub     { font-size: 21px; fill: #48555b; }
+    .stage   { font-size: 19px; font-weight: 600; fill: #121a1e; letter-spacing: .8px; }
+    .tool    { font-size: 30px; font-weight: 600; fill: #121a1e; }
+    .cap     { font-size: 15px; font-weight: 600; fill: #74828a; letter-spacing: 1.2px; }
+    .capbig  { font-size: 38px; font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .capsub  { font-size: 16px; fill: #48555b; }
+    .type    { font-size: 19px; font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .lane    { font-size: 13px; font-weight: 600; fill: #74828a; letter-spacing: 1.6px; }
+    .num     { font-size: 44px; font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .numlbl  { font-size: 17px; fill: #121a1e; }
+    .numnote { font-size: 13px; fill: #74828a; }
+    .foot    { font-size: 14px; fill: #48555b; }
+    .foot2   { font-size: 13px; fill: #74828a; }
+    .box     { fill: #eef2f0; stroke: #ccd6d2; stroke-width: 1.5; }
+    .boxnew  { fill: #eef2f0; stroke: #0c666c; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .endcap  { fill: #d8eaea; stroke: #0c666c; stroke-width: 1.5; }
+    .chip    { fill: #ffffff; stroke: #0c666c; stroke-width: 2; }
+    .flow    { stroke: #0c666c; stroke-width: 2.6; fill: none; }
+    .hair    { stroke: #ccd6d2; stroke-width: 1; }
+  </style>
+
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4.6" markerHeight="4.6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0c666c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="900" fill="#ffffff"/>
+
+  <!-- ===== TITLE ===== -->
+  <text x="36" y="62" class="eyebrow">NEXTFLOW · IBEX GPU CLUSTER</text>
+  <text x="36" y="120" class="title">FoldFlow</text>
+  <text x="36" y="156" class="sub">De novo protein design — one structure in, 48 predicted structures out</text>
+  <line x1="36" y1="190" x2="1564" y2="190" class="hair"/>
+
+  <!-- ===== STAGE HEADERS ===== -->
+  <text x="36"   y="244" class="stage">INPUT</text>
+  <text x="286"  y="244" class="stage">1 · BACKBONE GENERATION</text>
+  <text x="657"  y="244" class="stage">2 · SEQUENCE DESIGN</text>
+  <text x="1028" y="244" class="stage">3 · VALIDATION</text>
+  <text x="1399" y="244" class="stage">OUTPUT</text>
+
+  <!-- ===== INPUT ===== -->
+  <rect x="36" y="313" width="164" height="190" rx="9" class="endcap"/>
+  <text x="118" y="357" text-anchor="middle" class="cap">STRUCTURE</text>
+  <text x="118" y="405" text-anchor="middle" class="capbig">PDB</text>
+  <text x="118" y="443" text-anchor="middle" class="capsub">one target</text>
+  <text x="118" y="465" text-anchor="middle" class="capsub">× 3 designs</text>
+
+  <!-- ===== STAGE 1 ===== -->
+  <rect x="286" y="270" width="285" height="106" rx="9" class="box"/>
+  <text x="428" y="333" text-anchor="middle" class="tool">RFdiffusion</text>
+  <rect x="286" y="440" width="285" height="106" rx="9" class="box"/>
+  <text x="428" y="503" text-anchor="middle" class="tool">BoltzGen</text>
+
+  <!-- ===== STAGE 2 ===== -->
+  <rect x="657" y="270" width="285" height="106" rx="9" class="box"/>
+  <text x="799" y="333" text-anchor="middle" class="tool">ProteinMPNN</text>
+  <rect x="657" y="440" width="285" height="106" rx="9" class="box"/>
+  <text x="799" y="503" text-anchor="middle" class="tool">LigandMPNN</text>
+
+  <!-- ===== STAGE 3 ===== -->
+  <rect x="1028" y="270" width="285" height="106" rx="9" class="box"/>
+  <text x="1170" y="333" text-anchor="middle" class="tool">AlphaFold 2</text>
+  <rect x="1028" y="440" width="285" height="106" rx="9" class="boxnew"/>
+  <text x="1170" y="503" text-anchor="middle" class="tool">AlphaFold 3</text>
+
+  <!-- ===== OUTPUT ===== -->
+  <rect x="1399" y="313" width="165" height="190" rx="9" class="endcap"/>
+  <text x="1481" y="357" text-anchor="middle" class="cap">STRUCTURES</text>
+  <text x="1481" y="405" text-anchor="middle" class="capbig">PDB</text>
+  <text x="1481" y="443" text-anchor="middle" class="capsub">48 predicted,</text>
+  <text x="1481" y="465" text-anchor="middle" class="capsub">with scores</text>
+
+  <!-- ===== JUNCTION 1 : input → stage 1 ===== -->
+  <line x1="200" y1="408" x2="243" y2="408" class="flow"/>
+  <line x1="243" y1="323" x2="243" y2="383" class="flow"/>
+  <line x1="243" y1="433" x2="243" y2="493" class="flow"/>
+  <line x1="243" y1="323" x2="286" y2="323" class="flow" marker-end="url(#a2)"/>
+  <line x1="243" y1="493" x2="286" y2="493" class="flow" marker-end="url(#a2)"/>
+  <rect x="203" y="383" width="80" height="50" rx="8" class="chip"/>
+  <text x="243" y="415" text-anchor="middle" class="type">PDB</text>
+
+  <!-- ===== JUNCTION 2 : stage 1 → stage 2 ===== -->
+  <line x1="571" y1="323" x2="614" y2="323" class="flow"/>
+  <line x1="571" y1="493" x2="614" y2="493" class="flow"/>
+  <line x1="614" y1="323" x2="614" y2="383" class="flow"/>
+  <line x1="614" y1="433" x2="614" y2="493" class="flow"/>
+  <line x1="614" y1="323" x2="657" y2="323" class="flow" marker-end="url(#a2)"/>
+  <line x1="614" y1="493" x2="657" y2="493" class="flow" marker-end="url(#a2)"/>
+  <rect x="574" y="383" width="80" height="50" rx="8" class="chip"/>
+  <text x="614" y="415" text-anchor="middle" class="type">PDB</text>
+
+  <!-- ===== JUNCTION 3 : stage 2 → stage 3 ===== -->
+  <line x1="942" y1="323" x2="985" y2="323" class="flow"/>
+  <line x1="942" y1="493" x2="985" y2="493" class="flow"/>
+  <line x1="985" y1="323" x2="985" y2="383" class="flow"/>
+  <line x1="985" y1="433" x2="985" y2="493" class="flow"/>
+  <line x1="985" y1="323" x2="1028" y2="323" class="flow" marker-end="url(#a2)"/>
+  <line x1="985" y1="493" x2="1028" y2="493" class="flow" marker-end="url(#a2)"/>
+  <rect x="945" y="383" width="80" height="50" rx="8" class="chip"/>
+  <text x="985" y="415" text-anchor="middle" class="type">FASTA</text>
+
+  <!-- ===== JUNCTION 4 : stage 3 → output ===== -->
+  <line x1="1313" y1="323" x2="1356" y2="323" class="flow"/>
+  <line x1="1313" y1="493" x2="1356" y2="493" class="flow"/>
+  <line x1="1356" y1="323" x2="1356" y2="383" class="flow"/>
+  <line x1="1356" y1="433" x2="1356" y2="493" class="flow"/>
+  <line x1="1356" y1="408" x2="1399" y2="408" class="flow" marker-end="url(#a2)"/>
+  <rect x="1316" y="383" width="80" height="50" rx="8" class="chip"/>
+  <text x="1356" y="415" text-anchor="middle" class="type">PDB</text>
+
+  <!-- ===== FAN-OUT STRIP ===== -->
+  <line x1="36" y1="600" x2="1564" y2="600" class="hair"/>
+  <text x="36" y="636" class="lane">FAN-OUT — EVERY TOOL RUNS ON EVERY ITEM</text>
+
+  <text x="118"  y="704" text-anchor="middle" class="num">1</text>
+  <text x="118"  y="730" text-anchor="middle" class="numlbl">target structure</text>
+
+  <text x="428"  y="704" text-anchor="middle" class="num">6</text>
+  <text x="428"  y="730" text-anchor="middle" class="numlbl">backbones</text>
+  <text x="428"  y="750" text-anchor="middle" class="numnote">3 designs × 2 tools</text>
+
+  <text x="799"  y="704" text-anchor="middle" class="num">24</text>
+  <text x="799"  y="730" text-anchor="middle" class="numlbl">designed sequences</text>
+  <text x="799"  y="750" text-anchor="middle" class="numnote">× 2 tools × 2 sequences</text>
+
+  <text x="1170" y="704" text-anchor="middle" class="num">48</text>
+  <text x="1170" y="730" text-anchor="middle" class="numlbl">predicted structures</text>
+  <text x="1170" y="750" text-anchor="middle" class="numnote">× 2 predictors</text>
+
+  <!-- ===== FOOTER ===== -->
+  <text x="36" y="820" class="foot">Both tools in a stage run on every item; their outputs merge into one channel that the next stage picks up.</text>
+  <text x="36" y="842" class="foot2">AlphaFold 3 (dashed) is built and verified on a real run, but currently held in a git stash rather than the working tree.</text>
+</svg>

@@ -1,0 +1,300 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img"
+     aria-label="The FoldFlow pipeline: one target structure in PDB format fans out to three design indices, passes through backbone generation by RFdiffusion or BoltzGen producing PDB backbones, then sequence design by ProteinMPNN or LigandMPNN producing FASTA sequences, then validation by AlphaFold 2 or AlphaFold 3 producing predicted PDB structures with JSON scores. Each stage runs both of its tools on every item and mixes their outputs into one channel.">
+  <title>FoldFlow pipeline map</title>
+  <style>
+    text { font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .t-eyebrow  { font-size: 11px;   font-weight: 600; fill: #0c666c; letter-spacing: 1.7px; }
+    .t-title    { font-size: 42px;   font-weight: 600; fill: #121a1e; font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif; }
+    .t-thesis   { font-size: 13.5px; fill: #48555b; }
+    .t-thesis b { font-weight: 600;  fill: #121a1e; }
+    .t-thesis2  { font-size: 12px;   fill: #74828a; }
+    .t-chiplbl  { font-size: 9.5px;  font-weight: 600; fill: #74828a; letter-spacing: .9px; }
+    .t-chipval  { font-size: 12.5px; font-weight: 500; fill: #121a1e; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-stage    { font-size: 13px;   font-weight: 600; fill: #121a1e; }
+    .t-stagesub { font-size: 11px;   fill: #48555b; }
+    .t-name     { font-size: 18px;   font-weight: 600; fill: #121a1e; }
+    .t-cont     { font-size: 10px;   fill: #74828a; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-desc     { font-size: 11.5px; fill: #48555b; }
+    .t-lbl      { font-size: 9.5px;  font-weight: 600; fill: #74828a; letter-spacing: .7px; }
+    .t-val      { font-size: 10.5px; fill: #121a1e; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-out      { font-size: 10.5px; font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-type     { font-size: 13.5px;   font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-big      { font-size: 27px;   font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-op       { font-size: 10.5px; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-tuple    { font-size: 12px;   fill: #121a1e; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-count    { font-size: 10.5px; font-weight: 600; fill: #48555b; }
+    .t-panel    { font-size: 11.5px; font-weight: 600; fill: #121a1e; letter-spacing: .5px; }
+    .t-fname    { font-size: 11.5px; fill: #121a1e; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-keylbl   { font-size: 11px;   fill: #48555b; }
+    .t-bignum   { font-size: 17px;   font-weight: 500; fill: #0c666c; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-rowlbl   { font-size: 11.5px; fill: #48555b; }
+    .t-rownote  { font-size: 10px;   fill: #74828a; }
+    .t-metric   { font-size: 12px;   font-weight: 500; fill: #121a1e; font-family: "IBM Plex Mono", "DejaVu Sans Mono", Consolas, monospace; }
+    .t-foot     { font-size: 10px;   fill: #74828a; }
+    .box     { fill: #eef2f0; stroke: #ccd6d2; stroke-width: 1; }
+    .boxnew  { fill: #eef2f0; stroke: #0c666c; stroke-width: 1; stroke-dasharray: 4 3; }
+    .pill    { fill: #ffffff; stroke: #ccd6d2; stroke-width: 1; }
+    .endcap  { fill: #d8eaea; stroke: #0c666c; stroke-width: 1; }
+    .typechip{ fill: #ffffff; stroke: #0c666c; stroke-width: 1.4; }
+    .flow    { stroke: #0c666c; stroke-width: 1.8; fill: none; }
+    .tick    { stroke: #ccd6d2; stroke-width: 1; stroke-dasharray: 3 3; }
+    .hair    { stroke: #ccd6d2; stroke-width: 1; }
+    .swatch  { stroke: #0c666c; stroke-width: 3; }
+  </style>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0c666c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="900" fill="#ffffff"/>
+
+  <!-- ===================== TITLE ===================== -->
+  <text x="36" y="46" class="t-eyebrow">NEXTFLOW DSL2 · IBEX SLURM + SINGULARITY</text>
+  <text x="36" y="82" class="t-title">FoldFlow</text>
+  <text x="36" y="104" class="t-thesis">One target structure in, 48 predicted structures out: <tspan font-weight="600" fill="#121a1e">PDB</tspan> backbones become <tspan font-weight="600" fill="#121a1e">FASTA</tspan> sequences, folded back to <tspan font-weight="600" fill="#121a1e">PDB</tspan> with <tspan font-weight="600" fill="#121a1e">JSON</tspan> scores.</text>
+  <text x="36" y="122" class="t-thesis2">Every stage runs all of its tools on every item; the vertical bars mix their outputs into one channel that the next stage picks up.</text>
+
+  <text x="1240" y="64" class="t-chiplbl">STAGES</text>
+  <text x="1240" y="84" class="t-chipval">4</text>
+  <text x="1330" y="64" class="t-chiplbl">MODULES</text>
+  <text x="1330" y="84" class="t-chipval">6</text>
+  <text x="1430" y="64" class="t-chiplbl">FAN-OUT</text>
+  <text x="1430" y="84" class="t-chipval">1 PDB → 48 preds</text>
+  <line x1="36" y1="136" x2="1564" y2="136" class="hair"/>
+
+  <!-- ===================== STAGE HEADERS ===================== -->
+  <text x="36"   y="158" class="t-stage">0 · FAN-OUT</text>
+  <text x="36"   y="174" class="t-stagesub">one item per index</text>
+  <text x="258"  y="158" class="t-stage">1 · BACKBONE GENERATION</text>
+  <text x="258"  y="174" class="t-stagesub">a new backbone for each design index</text>
+  <text x="640"  y="158" class="t-stage">2 · SEQUENCE DESIGN</text>
+  <text x="640"  y="174" class="t-stagesub">two sequences per backbone, per tool</text>
+  <text x="1022" y="158" class="t-stage">3 · VALIDATION</text>
+  <text x="1022" y="174" class="t-stagesub">fold each sequence back to a structure</text>
+  <text x="1404" y="158" class="t-stage">OUTPUT</text>
+  <text x="1404" y="174" class="t-stagesub">published per stage</text>
+
+  <!-- ===================== INPUT ===================== -->
+  <rect x="36" y="298" width="150" height="150" rx="7" class="endcap"/>
+  <text x="52" y="324" class="t-lbl">INPUT</text>
+  <text x="52" y="358" class="t-big">PDB</text>
+  <text x="52" y="378" class="t-val">6px6.pdb</text>
+  <line x1="52" y1="390" x2="170" y2="390" class="hair"/>
+  <text x="52" y="410" class="t-desc">one target structure</text>
+  <text x="52" y="428" class="t-desc">× 3 design indices</text>
+
+  <!-- ===================== STAGE 1 : RFdiffusion ===================== -->
+  <rect x="258" y="186" width="310" height="180" rx="7" class="box"/>
+  <text x="274" y="216" class="t-name">RFdiffusion</text>
+  <text x="274" y="234" class="t-cont">docker://rosettacommons/rfdiffusion</text>
+  <line x1="274" y1="244" x2="552" y2="244" class="hair"/>
+  <text x="274" y="264" class="t-desc">Diffuses a new backbone around the fixed motif,</text>
+  <text x="274" y="281" class="t-desc">with contigs and schedule read from its YAML.</text>
+  <text x="274" y="298" class="t-desc">Writes a PDB plus a fixed-residue sidecar.</text>
+  <line x1="274" y1="310" x2="552" y2="310" class="hair"/>
+  <text x="274" y="328" class="t-lbl">CONFIG</text>
+  <text x="328" y="328" class="t-val">configs/RFdiffusion.yaml</text>
+  <text x="274" y="346" class="t-lbl">OUT</text>
+  <text x="274" y="360" class="t-out">*_rfdiffusion.pdb + *.fixed_regions</text>
+
+  <!-- ===================== STAGE 1 : BoltzGen ===================== -->
+  <rect x="258" y="380" width="310" height="180" rx="7" class="box"/>
+  <text x="274" y="410" class="t-name">BoltzGen</text>
+  <text x="274" y="428" class="t-cont">library://boltzgen/default/boltzgen_x86</text>
+  <line x1="274" y1="438" x2="552" y2="438" class="hair"/>
+  <text x="274" y="458" class="t-desc">Generates a backbone from the YAML entity spec.</text>
+  <text x="274" y="475" class="t-desc">Ranked CIF output is converted to PDB by gemmi.</text>
+  <text x="274" y="492" class="t-desc">No motif to hold, so its sidecar is empty.</text>
+  <line x1="274" y1="504" x2="552" y2="504" class="hair"/>
+  <text x="274" y="522" class="t-lbl">CONFIG</text>
+  <text x="328" y="522" class="t-val">configs/Boltzgen.yaml</text>
+  <text x="274" y="540" class="t-lbl">OUT</text>
+  <text x="274" y="554" class="t-out">*_boltzgen.pdb + empty *.fixed_regions</text>
+
+  <!-- ===================== STAGE 2 : ProteinMPNN ===================== -->
+  <rect x="640" y="186" width="310" height="180" rx="7" class="box"/>
+  <text x="656" y="216" class="t-name">ProteinMPNN</text>
+  <text x="656" y="234" class="t-cont">docker://rosettacommons/proteinmpnn</text>
+  <line x1="656" y1="244" x2="934" y2="244" class="hair"/>
+  <text x="656" y="264" class="t-desc">Samples sequences for the backbone, holding the</text>
+  <text x="656" y="281" class="t-desc">fixed positions named in the sidecar.</text>
+  <text x="656" y="298" class="t-desc">Writes one FASTA per designed sequence.</text>
+  <line x1="656" y1="310" x2="934" y2="310" class="hair"/>
+  <text x="656" y="328" class="t-lbl">CONFIG</text>
+  <text x="710" y="328" class="t-val">configs/MPNN.yaml</text>
+  <text x="656" y="346" class="t-lbl">OUT</text>
+  <text x="656" y="360" class="t-out">*_mpnn_{1,2}_proteinmpnn.fa</text>
+
+  <!-- ===================== STAGE 2 : LigandMPNN ===================== -->
+  <rect x="640" y="380" width="310" height="180" rx="7" class="box"/>
+  <text x="656" y="410" class="t-name">LigandMPNN</text>
+  <text x="656" y="428" class="t-cont">docker://rosettacommons/ligandmpnn</text>
+  <line x1="656" y1="438" x2="934" y2="438" class="hair"/>
+  <text x="656" y="458" class="t-desc">Same job with the ligand-aware model, taking</text>
+  <text x="656" y="475" class="t-desc">--fixed_residues directly from the sidecar.</text>
+  <text x="656" y="492" class="t-desc">Writes one FASTA per designed sequence.</text>
+  <line x1="656" y1="504" x2="934" y2="504" class="hair"/>
+  <text x="656" y="522" class="t-lbl">CONFIG</text>
+  <text x="710" y="522" class="t-val">configs/LigandMPNN.yaml</text>
+  <text x="656" y="540" class="t-lbl">OUT</text>
+  <text x="656" y="554" class="t-out">*_mpnn_{1,2}_ligandmpnn.fa</text>
+
+  <!-- ===================== STAGE 3 : AlphaFold 2 ===================== -->
+  <rect x="1022" y="186" width="310" height="180" rx="7" class="box"/>
+  <text x="1038" y="216" class="t-name">AlphaFold 2</text>
+  <text x="1038" y="234" class="t-cont">docker://catgumag/alphafold:2.3.0</text>
+  <line x1="1038" y1="244" x2="1316" y2="244" class="hair"/>
+  <text x="1038" y="264" class="t-desc">Searches MSAs and templates, then predicts 5</text>
+  <text x="1038" y="281" class="t-desc">models, relaxed and ranked. Folds chain 1 only.</text>
+  <text x="1038" y="298" class="t-desc">Writes PDB structures plus timing JSON.</text>
+  <line x1="1038" y1="310" x2="1316" y2="310" class="hair"/>
+  <text x="1038" y="328" class="t-lbl">CONFIG</text>
+  <text x="1092" y="328" class="t-val">configs/AlphaFold.yaml</text>
+  <text x="1038" y="346" class="t-lbl">OUT</text>
+  <text x="1038" y="360" class="t-out">ranked_0_*_alphafold_1_alphafold.pdb</text>
+
+  <!-- ===================== STAGE 3 : AlphaFold 3 ===================== -->
+  <rect x="1022" y="380" width="310" height="180" rx="7" class="boxnew"/>
+  <text x="1038" y="410" class="t-name">AlphaFold 3 <tspan font-size="12" fill="#0c666c">†</tspan></text>
+  <text x="1038" y="428" class="t-cont">alphafold3_v3.0.4.sif · built locally</text>
+  <line x1="1038" y1="438" x2="1316" y2="438" class="hair"/>
+  <text x="1038" y="458" class="t-desc">Same sequences against AF3 weights and databases.</text>
+  <text x="1038" y="475" class="t-desc">Writes mmCIF, converted to PDB with gemmi,</text>
+  <text x="1038" y="492" class="t-desc">plus confidence JSON and a ranking CSV.</text>
+  <line x1="1038" y1="504" x2="1316" y2="504" class="hair"/>
+  <text x="1038" y="522" class="t-lbl">CONFIG</text>
+  <text x="1092" y="522" class="t-val">configs/AlphaFold3.yaml</text>
+  <text x="1038" y="540" class="t-lbl">OUT</text>
+  <text x="1038" y="554" class="t-out">model_*_alphafold3.pdb .cif .json .csv</text>
+
+  <!-- ===================== OUTPUT ===================== -->
+  <rect x="1404" y="298" width="160" height="150" rx="7" class="endcap"/>
+  <text x="1420" y="324" class="t-lbl">OUTPUT</text>
+  <text x="1420" y="358" class="t-big">PDB</text>
+  <text x="1420" y="378" class="t-val">+ JSON scores</text>
+  <line x1="1420" y1="390" x2="1548" y2="390" class="hair"/>
+  <text x="1420" y="410" class="t-desc">48 predicted</text>
+  <text x="1420" y="428" class="t-desc">structures, ranked</text>
+
+  <!-- ===================== JUNCTION 1 : input → stage 1 ===================== -->
+  <rect x="190" y="232" width="64" height="30" rx="6" class="typechip"/>
+  <text x="222" y="253" text-anchor="middle" class="t-type">PDB</text>
+  <line x1="222" y1="262" x2="222" y2="276" class="flow"/>
+  <line x1="186" y1="373" x2="222" y2="373" class="flow"/>
+  <line x1="222" y1="276" x2="222" y2="470" class="flow"/>
+  <circle cx="222" cy="373" r="4" fill="#0c666c"/>
+  <line x1="222" y1="276" x2="258" y2="276" class="flow" marker-end="url(#ar)"/>
+  <line x1="222" y1="470" x2="258" y2="470" class="flow" marker-end="url(#ar)"/>
+  <line x1="222" y1="470" x2="222" y2="594" class="tick"/>
+
+  <!-- ===================== JUNCTION 2 : stage 1 → stage 2 ===================== -->
+  <rect x="572" y="232" width="64" height="30" rx="6" class="typechip"/>
+  <text x="604" y="253" text-anchor="middle" class="t-type">PDB</text>
+  <line x1="604" y1="262" x2="604" y2="276" class="flow"/>
+  <line x1="568" y1="276" x2="604" y2="276" class="flow"/>
+  <line x1="568" y1="470" x2="604" y2="470" class="flow"/>
+  <line x1="604" y1="276" x2="604" y2="470" class="flow"/>
+  <circle cx="604" cy="373" r="4" fill="#0c666c"/>
+  <line x1="604" y1="276" x2="640" y2="276" class="flow" marker-end="url(#ar)"/>
+  <line x1="604" y1="470" x2="640" y2="470" class="flow" marker-end="url(#ar)"/>
+  <line x1="604" y1="470" x2="604" y2="594" class="tick"/>
+
+  <!-- ===================== JUNCTION 3 : stage 2 → stage 3 ===================== -->
+  <rect x="954" y="232" width="64" height="30" rx="6" class="typechip"/>
+  <text x="986" y="253" text-anchor="middle" class="t-type">FASTA</text>
+  <line x1="986" y1="262" x2="986" y2="276" class="flow"/>
+  <line x1="950" y1="276" x2="986" y2="276" class="flow"/>
+  <line x1="950" y1="470" x2="986" y2="470" class="flow"/>
+  <line x1="986" y1="276" x2="986" y2="470" class="flow"/>
+  <circle cx="986" cy="373" r="4" fill="#0c666c"/>
+  <line x1="986" y1="276" x2="1022" y2="276" class="flow" marker-end="url(#ar)"/>
+  <line x1="986" y1="470" x2="1022" y2="470" class="flow" marker-end="url(#ar)"/>
+  <line x1="986" y1="470" x2="986" y2="594" class="tick"/>
+
+  <!-- ===================== JUNCTION 4 : stage 3 → output ===================== -->
+  <rect x="1336" y="232" width="64" height="30" rx="6" class="typechip"/>
+  <text x="1368" y="253" text-anchor="middle" class="t-type">PDB</text>
+  <line x1="1368" y1="262" x2="1368" y2="276" class="flow"/>
+  <line x1="1332" y1="276" x2="1368" y2="276" class="flow"/>
+  <line x1="1332" y1="470" x2="1368" y2="470" class="flow"/>
+  <line x1="1368" y1="276" x2="1368" y2="470" class="flow"/>
+  <circle cx="1368" cy="373" r="4" fill="#0c666c"/>
+  <line x1="1368" y1="373" x2="1404" y2="373" class="flow" marker-end="url(#ar)"/>
+  <line x1="1368" y1="470" x2="1368" y2="594" class="tick"/>
+
+  <!-- ===================== CHANNEL LANE ===================== -->
+  <text x="36" y="586" class="t-lbl">WHAT TRAVELS BETWEEN STAGES — OPERATOR, TUPLE, COUNT</text>
+
+  <rect x="47" y="594" width="350" height="62" rx="6" class="pill"/>
+  <text x="63" y="614" class="t-op">channel.of(0..2).combine(pdb)</text>
+  <text x="63" y="633" class="t-tuple">[ meta, design_idx, input_pdb ]</text>
+  <text x="63" y="649" class="t-count">3 items, each sent to both tools</text>
+
+  <rect x="429" y="594" width="350" height="62" rx="6" class="pill"/>
+  <text x="445" y="614" class="t-op">.mix() then .join(by: 0)</text>
+  <text x="445" y="633" class="t-tuple">[ meta, backbone.pdb, .fixed_regions ]</text>
+  <text x="445" y="649" class="t-count">6 backbones — 3 per tool</text>
+
+  <rect x="811" y="594" width="350" height="62" rx="6" class="pill"/>
+  <text x="827" y="614" class="t-op">.mix().transpose()</text>
+  <text x="827" y="633" class="t-tuple">[ meta, sequence.fa ]</text>
+  <text x="827" y="649" class="t-count">24 sequences — one FASTA per task</text>
+
+  <rect x="1193" y="594" width="350" height="62" rx="6" class="pill"/>
+  <text x="1209" y="614" class="t-op">.mix()</text>
+  <text x="1209" y="633" class="t-tuple">[ meta, structure.pdb, scores.json ]</text>
+  <text x="1209" y="649" class="t-count">48 predictions — 24 per predictor</text>
+
+  <!-- ===================== PANEL 1 : filename decoder ===================== -->
+  <text x="36" y="690" class="t-panel">READING AN OUTPUT FILENAME</text>
+  <line x1="36" y1="700" x2="560" y2="700" class="hair"/>
+  <text x="52" y="736" class="t-fname">model_boltzgen_3_mpnn_1_ligandmpnn_alphafold_1_alphafold3.pdb</text>
+  <line x1="93.4"  y1="744" x2="162.4" y2="744" class="swatch"/>
+  <line x1="217.6" y1="744" x2="286.6" y2="744" class="swatch"/>
+  <line x1="376.3" y1="744" x2="445.3" y2="744" class="swatch"/>
+  <line x1="52" y1="760" x2="66" y2="760" class="swatch"/>
+  <text x="76" y="764" class="t-keylbl">boltzgen_3 — backbone tool and its design index</text>
+  <line x1="52" y1="780" x2="66" y2="780" class="swatch"/>
+  <text x="76" y="784" class="t-keylbl">ligandmpnn — which sequence-design tool sampled it</text>
+  <line x1="52" y1="800" x2="66" y2="800" class="swatch"/>
+  <text x="76" y="804" class="t-keylbl">alphafold3 — which predictor validated it</text>
+  <text x="52" y="827" class="t-rownote">The lineage rides in the filename, so any structure traces back without opening a log.</text>
+
+  <!-- ===================== PANEL 2 : fan-out ===================== -->
+  <text x="584" y="690" class="t-panel">FAN-OUT</text>
+  <line x1="584" y1="700" x2="1020" y2="700" class="hair"/>
+  <text x="636" y="728" text-anchor="end" class="t-bignum">1</text>
+  <text x="650" y="728" class="t-rowlbl">input structure</text>
+  <text x="1014" y="728" text-anchor="end" class="t-rownote">PDB</text>
+  <text x="636" y="752" text-anchor="end" class="t-bignum">3</text>
+  <text x="650" y="752" class="t-rowlbl">design indices</text>
+  <text x="1014" y="752" text-anchor="end" class="t-rownote">--rfdiff_num_designs 3</text>
+  <text x="636" y="776" text-anchor="end" class="t-bignum">6</text>
+  <text x="650" y="776" class="t-rowlbl">backbones</text>
+  <text x="1014" y="776" text-anchor="end" class="t-rownote">× 2 backbone tools · PDB</text>
+  <text x="636" y="800" text-anchor="end" class="t-bignum">24</text>
+  <text x="650" y="800" class="t-rowlbl">designed sequences</text>
+  <text x="1014" y="800" text-anchor="end" class="t-rownote">× 2 MPNN tools × 2 sequences · FASTA</text>
+  <text x="636" y="824" text-anchor="end" class="t-bignum">48</text>
+  <text x="650" y="824" class="t-rowlbl">scored predictions</text>
+  <text x="1014" y="824" text-anchor="end" class="t-rownote">× 2 predictors · PDB + JSON</text>
+
+  <!-- ===================== PANEL 3 : last run ===================== -->
+  <text x="1044" y="690" class="t-panel">FROM THE LAST RUN</text>
+  <line x1="1044" y1="700" x2="1564" y2="700" class="hair"/>
+  <text x="1130" y="728" text-anchor="end" class="t-metric">1 h 35 m</text>
+  <text x="1144" y="728" class="t-rowlbl">full run — 42 upstream tasks resumed from cache</text>
+  <text x="1130" y="752" text-anchor="end" class="t-metric">~10 min</text>
+  <text x="1144" y="752" class="t-rowlbl">per AF3 job — 8 min database search, under 1 min GPU</text>
+  <text x="1130" y="776" text-anchor="end" class="t-metric">0.80</text>
+  <text x="1144" y="776" class="t-rowlbl">best ranking score — boltzgen_3_mpnn_1_ligandmpnn</text>
+  <text x="1130" y="800" text-anchor="end" class="t-metric">0.42</text>
+  <text x="1144" y="800" class="t-rowlbl">lowest — rfdiffusion_3_mpnn_1_proteinmpnn</text>
+  <text x="1130" y="824" text-anchor="end" class="t-metric">24 / 24</text>
+  <text x="1144" y="824" class="t-rowlbl">AlphaFold 3 tasks completed, no retries</text>
+
+  <!-- ===================== FOOTNOTE ===================== -->
+  <text x="36" y="872" class="t-foot">† The AlphaFold 3 module is complete and verified on a real run, but currently lives in git stash@{0} rather than the working tree. Counts assume the current defaults — change rfdiff_num_designs or the per-tool sequence counts and the fan-out changes with them.</text>
+</svg>
