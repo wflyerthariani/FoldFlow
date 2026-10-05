@@ -1,0 +1,81 @@
+nextflow_process {
+
+    name "Test Process ALPHAFOLD3"
+    script "modules/local/alphafold3/main.nf"
+    process "ALPHAFOLD3"
+
+    test("alphafold3 structure prediction with test protein") {
+        tag "gpu"
+        options "-dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            // Top-ranked model is emitted as both PDB and mmCIF
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_protein'
+            assert path(pdbPath).fileName.toString() == 'model_test_protein_alphafold_1_alphafold3.pdb'
+            assert process.out.cifs.size() == 1
+
+            // Versions output is present
+            assert process.out.versions.size() == 1
+            def versionsYml = path(process.out.versions[0])
+            assert versionsYml.text.contains('ALPHAFOLD3')
+            assert versionsYml.text.contains('alphafold3')
+        }
+
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | alphafold3 structure prediction with test protein") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+            assert process.success
+
+            assert process.out.structures.size() == 1
+            def (meta, pdbPath) = process.out.structures[0]
+            assert meta.id == 'test_protein'
+            assert path(pdbPath).fileName.toString() == 'model_test_protein_alphafold_1_alphafold3.pdb'
+
+            assert process.out.cifs.size() == 1
+            assert process.out.scores.size() == 1
+            assert process.out.ranking.size() == 1
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+
+    }
+}

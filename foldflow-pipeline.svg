@@ -156,8 +156,8 @@
   <text x="1038" y="360" class="t-out">ranked_0_*_alphafold_1_alphafold.pdb</text>
 
   <!-- ===================== STAGE 3 : AlphaFold 3 ===================== -->
-  <rect x="1022" y="380" width="310" height="180" rx="7" class="boxnew"/>
-  <text x="1038" y="410" class="t-name">AlphaFold 3 <tspan font-size="12" fill="#0c666c">†</tspan></text>
+  <rect x="1022" y="380" width="310" height="180" rx="7" class="box"/>
+  <text x="1038" y="410" class="t-name">AlphaFold 3</text>
   <text x="1038" y="428" class="t-cont">alphafold3_v3.0.4.sif · built locally</text>
   <line x1="1038" y1="438" x2="1316" y2="438" class="hair"/>
   <text x="1038" y="458" class="t-desc">Same sequences against AF3 weights and databases.</text>
@@ -296,5 +296,5 @@
   <text x="1144" y="824" class="t-rowlbl">AlphaFold 3 tasks completed, no retries</text>
 
   <!-- ===================== FOOTNOTE ===================== -->
-  <text x="36" y="872" class="t-foot">† The AlphaFold 3 module is complete and verified on a real run, but currently lives in git stash@{0} rather than the working tree. Counts assume the current defaults — change rfdiff_num_designs or the per-tool sequence counts and the fan-out changes with them.</text>
+  <text x="36" y="872" class="t-foot">Counts assume the current defaults — change rfdiff_num_designs or the per-tool sequence counts and the fan-out changes with them.</text>
 </svg>

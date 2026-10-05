@@ -1,0 +1,19 @@
+# AlphaFold 3 runtime settings (_-prefixed keys are read by the module, not passed to AF3)
+# _container:  SIF built by modules/local/alphafold3/build_container.sh
+# _db_dir:     AF3 genetic databases (bind-mounted read-only automatically)
+# _model_path: AF3 weights file; only this file is staged into --model_dir
+# _chains:     first = fold the first chain only (same as the AlphaFold 2 module)
+#              all   = fold every chain in the MPNN FASTA as one complex
+# _xla_flags:  keep the default on A100/H100; on compute capability 7.x GPUs use
+#              --xla_disable_hlo_passes=custom-kernel-fusion-rewriter with
+#              flash_attention_implementation: xla
+_container: /ibex/user/x_thariaa/containers/alphafold3_v3.0.4.sif
+_db_dir: /ibex/reference/KSL/alphafold/3.0.0
+_model_path: /ibex/user/x_thariaa/AF3_models/af3.bin
+_chains: first
+_xla_flags: --xla_gpu_enable_triton_gemm=false
+
+# AlphaFold 3 inference parameters
+model_seeds: 1
+num_diffusion_samples: 5
+flash_attention_implementation: triton

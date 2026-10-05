@@ -9,6 +9,7 @@ include { BOLTZGEN     } from '../modules/local/boltzgen/main'
 include { PROTEINMPNN  } from '../modules/local/proteinmpnn/main'
 include { LIGANDMPNN   } from '../modules/local/ligandmpnn/main'
 include { ALPHAFOLD    } from '../modules/local/alphafold/main'
+include { ALPHAFOLD3   } from '../modules/local/alphafold3/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,9 +73,13 @@ workflow FOLDFLOW {
         .mix(LIGANDMPNN.out.sequences)
     // ──────────────────────────────────────────────────────────────────────
 
-    //
-    // MODULE: AlphaFold - Validate designed sequences by folding
-    //
+    // ── VALIDATION STAGE ──────────────────────────────────────────────────
+    // Every structure predictor receives alphafold_input and runs in parallel.
+    // To add another validation tool:
+    //   1. Add an include { NEWTOOL } line at the top of this file
+    //   2. Call NEWTOOL(alphafold_input) below
+    //   3. Mix its .out.structures / .out.scores into ch_val_structures / ch_val_scores
+    //   4. Add a withName: 'NEWTOOL' block in conf/modules.config
     def alphafold_input = ch_sequences
         .transpose()
         .map { meta, fasta ->
@@ -87,17 +92,24 @@ workflow FOLDFLOW {
             tuple(seq_meta, fasta)
         }
     
-    ALPHAFOLD(
-        alphafold_input
-    )
+    ALPHAFOLD(alphafold_input)
     ch_versions = ch_versions.mix(ALPHAFOLD.out.versions.first())
+
+    ALPHAFOLD3(alphafold_input)
+    ch_versions = ch_versions.mix(ALPHAFOLD3.out.versions.first())
+
+    def ch_val_structures = ALPHAFOLD.out.structures
+        .mix(ALPHAFOLD3.out.structures)
+    def ch_val_scores = ALPHAFOLD.out.scores
+        .mix(ALPHAFOLD3.out.scores)
+    // ──────────────────────────────────────────────────────────────────────
 
     emit:
     design_structures    = RFDIFFUSION.out.structures.mix(BOLTZGEN.out.structures)
     design_fixed_regions = RFDIFFUSION.out.fixed_regions.mix(BOLTZGEN.out.fixed_regions)
     mpnn_sequences       = ch_sequences
-    alphafold_structures = ALPHAFOLD.out.structures
-    alphafold_scores     = ALPHAFOLD.out.scores
+    alphafold_structures = ch_val_structures
+    alphafold_scores     = ch_val_scores
     versions             = ch_versions
 }
 

@@ -69,7 +69,7 @@
   <!-- ===== STAGE 3 ===== -->
   <rect x="1028" y="270" width="285" height="106" rx="9" class="box"/>
   <text x="1170" y="333" text-anchor="middle" class="tool">AlphaFold 2</text>
-  <rect x="1028" y="440" width="285" height="106" rx="9" class="boxnew"/>
+  <rect x="1028" y="440" width="285" height="106" rx="9" class="box"/>
   <text x="1170" y="503" text-anchor="middle" class="tool">AlphaFold 3</text>
 
   <!-- ===== OUTPUT ===== -->
@@ -138,5 +138,4 @@
 
   <!-- ===== FOOTER ===== -->
   <text x="36" y="820" class="foot">Both tools in a stage run on every item; their outputs merge into one channel that the next stage picks up.</text>
-  <text x="36" y="842" class="foot2">AlphaFold 3 (dashed) is built and verified on a real run, but currently held in a git stash rather than the working tree.</text>
 </svg>
