@@ -1,0 +1,97 @@
+{
+    "stub - emits structure, mmCIF, confidences and ranking for one sequence": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "model_test_protein_alphafold_1_alphafold3.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "model_test_protein_alphafold_1_alphafold3.cif:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        [
+                            "confidences_test_protein_alphafold_1_alphafold3.json:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "summary_confidences_test_protein_alphafold_1_alphafold3.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "ranking_scores_test_protein_alphafold_1_alphafold3.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    "versions.yml:md5,dbf77dc60b5c7d423c44f5b4bf741552"
+                ],
+                "cifs": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "model_test_protein_alphafold_1_alphafold3.cif:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "ranking": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "ranking_scores_test_protein_alphafold_1_alphafold3.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "scores": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        [
+                            "confidences_test_protein_alphafold_1_alphafold3.json:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "summary_confidences_test_protein_alphafold_1_alphafold3.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "structures": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1_mpnn_1"
+                        },
+                        "model_test_protein_alphafold_1_alphafold3.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,dbf77dc60b5c7d423c44f5b4bf741552"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:44:30.94340646"
+    }
+}

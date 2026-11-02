@@ -1,0 +1,51 @@
+{
+    "stub - emits one backbone and one sidecar per design index": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_BG0_0_boltzgen_1_boltzgen.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_BG0_0_boltzgen_1_boltzgen.fixed_regions:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "versions.yml:md5,16438e772145cdf8dc6381769aadce3d"
+                ],
+                "fixed_regions": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_BG0_0_boltzgen_1_boltzgen.fixed_regions:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "structures": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_BG0_0_boltzgen_1_boltzgen.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,16438e772145cdf8dc6381769aadce3d"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:41:17.314337768"
+    }
+}

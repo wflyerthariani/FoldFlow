@@ -1,0 +1,79 @@
+{
+    "stub - emits a structure, scores and timings for one sequence": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        "test_protein_model_1_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        [
+                            "test_protein_scores_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "timings_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        "timings_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "versions.yml:md5,39106a565783c72e824d975347fae7d0"
+                ],
+                "scores": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        [
+                            "test_protein_scores_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "timings_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "structures": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        "test_protein_model_1_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "timings": [
+                    [
+                        {
+                            "id": "test_protein",
+                            "lineage": "rfdiffusion_1_mpnn_1"
+                        },
+                        "timings_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,39106a565783c72e824d975347fae7d0"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:40:44.188191486"
+    }
+}

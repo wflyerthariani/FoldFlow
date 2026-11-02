@@ -4,137 +4,177 @@ nextflow_process {
     script "modules/local/proteinmpnn/main.nf"
     process "PROTEINMPNN"
 
-    test("proteinmpnn sequence design with structure and trajectory") {
-        tag "fast"
-        tag "gpu"
-        options "-dump-hashes"
+    tag "modules"
+    tag "proteinmpnn"
+    tag "sequence"
 
-        when {
-            process {
-                """
-                input[0] = [
-                    [ id: 'test_structure' ],
-                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
-                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.trb")
-                ]
-                """
-            }
-        }
-
-        then {
-            DebugUtils.printTree(process.out)
-
-            assert process.success
-
-            // Output FASTA sequence files exist
-            assert process.out.sequences.size() == 1
-            def (meta, fastaPath) = process.out.sequences[0]
-            assert meta.id == 'test_structure'
-            
-            // Check that FASTA files were generated
-            def fastaFiles = fastaPath instanceof List ? fastaPath : [fastaPath]
-            assert fastaFiles.size() > 0
-            fastaFiles.each { fasta ->
-                def fastaFile = path(fasta)
-                assert fastaFile.exists()
-                assert fastaFile.fileName.toString().endsWith('.fa')
-                
-                // Verify FASTA format
-                def content = fastaFile.text
-                assert content.contains('>')
-            }
-
-            // Versions output is present
-            assert process.out.versions.size() == 1
-            def versionsYml = path(process.out.versions[0])
-            assert versionsYml.text.contains('PROTEINMPNN')
-            assert versionsYml.text.contains('proteinmpnn')
-
-            assert snapshot(process.out).match()
-        }
-
-    }
-
-    test("proteinmpnn sequence design with structure only") {
-        tag "fast"
-        tag "gpu"
-        options "-dump-hashes"
-
-        when {
-            process {
-                """
-                input[0] = [
-                    [ id: 'test_structure_no_trb' ],
-                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
-                    []
-                ]
-                """
-            }
-        }
-
-        then {
-            DebugUtils.printTree(process.out)
-
-            assert process.success
-
-            // Output FASTA sequence files exist
-            assert process.out.sequences.size() == 1
-            def (meta, fastaPath) = process.out.sequences[0]
-            assert meta.id == 'test_structure_no_trb'
-
-            // Versions output is present
-            assert process.out.versions.size() == 1
-
-            assert snapshot(process.out).match()
-        }
-
-    }
-
-    // =========================================================================
+    // -------------------------------------------------------------------------
     // STUB TESTS
-    // =========================================================================
+    // -------------------------------------------------------------------------
 
-    test("stub | proteinmpnn sequence design with structure and trajectory") {
+    test("stub - emits mpnn_num_sequences FASTAs carrying the backbone lineage") {
         tag "stub"
-        tag "fast"
-        options "-stub-run -dump-hashes"
+        options "-stub-run"
 
         when {
+            params {
+                mpnn_num_sequences = 2
+            }
             process {
                 """
                 input[0] = [
-                    [ id: 'test_structure' ],
+                    [ id: 'test_design', lineage: 'rfdiffusion_1' ],
                     file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
-                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.trb")
+                    file("${projectDir}/tests/data/test.fixed_regions")
                 ]
                 """
             }
         }
 
         then {
-            DebugUtils.printTree(process.out)
-            assert process.success
+            def names = process.out.sequences[0][1].collect { path(it).fileName.toString() } as Set
+            assertAll(
+                { assert process.success },
+                { assert process.out.sequences.size() == 1 },
+                { assert process.out.versions.size() == 1 },
 
-            // Output FASTA sequence files exist
-            assert process.out.sequences.size() == 1
-            def (meta, fastaPath) = process.out.sequences[0]
-            assert meta.id == 'test_structure'
-            
-            // Check that stub FASTA files were generated (default num_sequences = 2)
-            def fastaFiles = fastaPath instanceof List ? fastaPath : [fastaPath]
-            assert fastaFiles.size() >= 1
-            
-            // Verify stub files have .fa extension
-            fastaFiles.each { fasta ->
-                def fastaFile = path(fasta)
-                assert fastaFile.fileName.toString().endsWith('.fa')
+                { assert names.size() == 2 },
+                // The sequence index and the tool tag both live in the filename; the
+                // validation stage reads the lineage back out of it with a regex.
+                { assert names.contains('rfdiffusion_1_mpnn_1_proteinmpnn.fa') },
+                { assert names.contains('rfdiffusion_1_mpnn_2_proteinmpnn.fa') },
+
+                { assert path(process.out.versions[0]).text.contains('PROTEINMPNN') },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("stub - sequence count follows mpnn_num_sequences") {
+        tag "stub"
+        options "-stub-run"
+
+        when {
+            params {
+                mpnn_num_sequences = 4
             }
-
-            // Versions output is present
-            assert process.out.versions.size() == 1
-
-            assert snapshot(process.out).match()
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design', lineage: 'boltzgen_2' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/tests/data/test.fixed_regions")
+                ]
+                """
+            }
         }
 
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.sequences[0][1].size() == 4 },
+                // Works downstream of either backbone tool, not just RFdiffusion.
+                { assert process.out.sequences[0][1].every {
+                        path(it).fileName.toString().startsWith('boltzgen_2_mpnn_') } }
+            )
+        }
+    }
+
+    test("stub - falls back to a design_idx lineage when meta has none") {
+        tag "stub"
+        options "-stub-run"
+
+        when {
+            params {
+                mpnn_num_sequences = 1
+            }
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design', design_idx: 2 ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/tests/data/test.fixed_regions")
+                ]
+                """
+            }
+        }
+
+        then {
+            // A single match is emitted as a scalar path, not a one-element list.
+            def seqs = process.out.sequences[0][1]
+            def seqList = seqs instanceof List ? seqs : [seqs]
+            assertAll(
+                { assert process.success },
+                { assert seqList.size() == 1 },
+                // design_idx is 0-based, the lineage is 1-based.
+                { assert path(seqList[0]).fileName.toString() ==
+                        'rfdiffusion_3_mpnn_1_proteinmpnn.fa' }
+            )
+        }
+    }
+
+    test("stub - an empty sidecar is accepted, as BoltzGen produces one") {
+        tag "stub"
+        options "-stub-run"
+
+        when {
+            params {
+                mpnn_num_sequences = 1
+            }
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design', lineage: 'boltzgen_1' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/tests/data/empty.fixed_regions")
+                ]
+                """
+            }
+        }
+
+        then {
+            def seqs = process.out.sequences[0][1]
+            def seqList = seqs instanceof List ? seqs : [seqs]
+            assertAll(
+                { assert process.success },
+                { assert seqList.size() == 1 }
+            )
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FULL TEST - needs the container and a GPU.  nf-test test --tag gpu
+    // -------------------------------------------------------------------------
+
+    test("proteinmpnn designs sequences for a backbone") {
+        tag "gpu"
+        tag "full"
+
+        when {
+            params {
+                mpnn_num_sequences = 2
+            }
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_design', lineage: 'rfdiffusion_1' ],
+                    file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb"),
+                    file("${projectDir}/tests/data/test.fixed_regions")
+                ]
+                """
+            }
+        }
+
+        then {
+            def fastas = process.out.sequences[0][1].collect { path(it) }
+            assertAll(
+                { assert process.success },
+                { assert fastas.size() == 2 },
+                // Each split file holds exactly one record: MPNN's echoed input
+                // sequence must have been dropped by split_mpnn_fastas.py.
+                { assert fastas.every { it.text.count('>') == 1 } },
+                { assert fastas.every { it.text.readLines()[1] ==~ /^[A-Z\/:]+$/ } }
+            )
+        }
     }
 }

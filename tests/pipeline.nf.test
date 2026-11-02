@@ -1,0 +1,72 @@
+nextflow_pipeline {
+
+    name "Test FoldFlow pipeline end to end"
+    script "main.nf"
+
+    tag "pipeline"
+
+    // Whole-workflow stub run: every process executes with placeholder commands, so
+    // this covers channel wiring, the fan-out arithmetic, the lineage carried through
+    // meta, and the publish layout - without a GPU, a container or model weights.
+    test("stub - fans one structure out to the expected number of predictions") {
+        tag "stub"
+        options "-stub-run"
+
+        when {
+            params {
+                input_pdb                = "${projectDir}/6px6.pdb"
+                outdir                   = "${outputDir}"
+                output_prefix            = 'test_design'
+                rfdiff_num_designs       = 2
+                mpnn_num_sequences       = 1
+                ligandmpnn_num_sequences = 2
+            }
+        }
+
+        then {
+            // 2 design indices x 2 backbone tools                      = 4 backbones
+            // 4 backbones x (1 ProteinMPNN + 2 LigandMPNN) sequences   = 12 sequences
+            // 12 sequences x 2 predictors                              = 24 predictions
+            def published = { String stage, String glob ->
+                def dir = new File("${outputDir}/test_design/${stage}")
+                dir.isDirectory() ? dir.listFiles().findAll { it.name ==~ glob }.size() : -1
+            }
+            def byProcess = { String name ->
+                workflow.trace.succeeded().count { it.name ==~ /(?s).*\b${name}\b.*/ }
+            }
+
+            assertAll(
+                { assert workflow.success },
+
+                // Task counts per stage.
+                { assert byProcess('RFDIFFUSION') == 2 },
+                { assert byProcess('BOLTZGEN')    == 2 },
+                { assert byProcess('PROTEINMPNN') == 4 },
+                { assert byProcess('LIGANDMPNN')  == 4 },
+                { assert byProcess('ALPHAFOLD')   == 12 },
+                { assert byProcess('ALPHAFOLD3')  == 12 },
+                { assert workflow.trace.succeeded().size() == 36 },
+
+                // Published backbones, one per design index per tool.
+                { assert published('rfdiffusion', /.*_rfdiffusion\.pdb/) == 2 },
+                { assert published('boltzgen',    /.*_boltzgen\.pdb/)    == 2 },
+
+                // Published sequences, named so the backbone lineage survives.
+                { assert published('proteinmpnn', /.*_mpnn_\d+_proteinmpnn\.fa/) == 4 },
+                { assert published('ligandmpnn',  /.*_mpnn_\d+_ligandmpnn\.fa/)  == 8 },
+
+                // One AlphaFold 3 prediction per sequence, each with its score files.
+                { assert published('alphafold3', /model_.*_alphafold3\.pdb/) == 12 },
+                { assert published('alphafold3', /model_.*_alphafold3\.cif/) == 12 },
+                { assert published('alphafold3', /ranking_scores_.*\.csv/)   == 12 },
+                { assert published('alphafold3', /confidences_.*\.json/)     == 12 },
+
+                // AlphaFold 2 ran 12 tasks but its filenames omit the sequence-design
+                // tool, so sequences differing only by which MPNN produced them
+                // overwrite each other on publish. Known issue, asserted so that
+                // fixing it shows up here rather than silently.
+                { assert published('alphafold', /.*_alphafold\.pdb/) == 8 }
+            )
+        }
+    }
+}

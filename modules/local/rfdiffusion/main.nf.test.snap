@@ -1,0 +1,51 @@
+{
+    "stub - emits one backbone and one sidecar per design index": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_RFD_0_rfdiffusion_1_rfdiffusion.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_RFD_0_rfdiffusion_1_rfdiffusion.fixed_regions:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "versions.yml:md5,dec9493df07e524db4b9f355a6500751"
+                ],
+                "fixed_regions": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_RFD_0_rfdiffusion_1_rfdiffusion.fixed_regions:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "structures": [
+                    [
+                        {
+                            "id": "test_design"
+                        },
+                        "test_design_RFD_0_rfdiffusion_1_rfdiffusion.pdb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,dec9493df07e524db4b9f355a6500751"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:42:07.868706732"
+    }
+}

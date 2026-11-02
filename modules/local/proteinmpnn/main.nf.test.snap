@@ -1,0 +1,43 @@
+{
+    "stub - emits mpnn_num_sequences FASTAs carrying the backbone lineage": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "rfdiffusion_1"
+                        },
+                        [
+                            "rfdiffusion_1_mpnn_1_proteinmpnn.fa:md5,4478b9af38122b89b6a0715f47120ab2",
+                            "rfdiffusion_1_mpnn_2_proteinmpnn.fa:md5,d2c168fccd4dbe35ac83d7c554bd3f1f"
+                        ]
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,4555f0dcd5fbe08674c62128ce7336d6"
+                ],
+                "sequences": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "rfdiffusion_1"
+                        },
+                        [
+                            "rfdiffusion_1_mpnn_1_proteinmpnn.fa:md5,4478b9af38122b89b6a0715f47120ab2",
+                            "rfdiffusion_1_mpnn_2_proteinmpnn.fa:md5,d2c168fccd4dbe35ac83d7c554bd3f1f"
+                        ]
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,4555f0dcd5fbe08674c62128ce7336d6"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:45:18.753288762"
+    }
+}

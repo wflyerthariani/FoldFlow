@@ -1,0 +1,43 @@
+{
+    "stub - emits ligandmpnn_num_sequences FASTAs carrying the backbone lineage": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1"
+                        },
+                        [
+                            "boltzgen_1_mpnn_1_ligandmpnn.fa:md5,4478b9af38122b89b6a0715f47120ab2",
+                            "boltzgen_1_mpnn_2_ligandmpnn.fa:md5,d2c168fccd4dbe35ac83d7c554bd3f1f"
+                        ]
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,8d7af367c26f0fd4165b0109c4a16a7d"
+                ],
+                "sequences": [
+                    [
+                        {
+                            "id": "test_design",
+                            "lineage": "boltzgen_1"
+                        },
+                        [
+                            "boltzgen_1_mpnn_1_ligandmpnn.fa:md5,4478b9af38122b89b6a0715f47120ab2",
+                            "boltzgen_1_mpnn_2_ligandmpnn.fa:md5,d2c168fccd4dbe35ac83d7c554bd3f1f"
+                        ]
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,8d7af367c26f0fd4165b0109c4a16a7d"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.2"
+        },
+        "timestamp": "2026-11-02T07:44:59.745234999"
+    }
+}

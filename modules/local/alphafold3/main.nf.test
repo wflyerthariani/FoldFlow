@@ -4,15 +4,23 @@ nextflow_process {
     script "modules/local/alphafold3/main.nf"
     process "ALPHAFOLD3"
 
-    test("alphafold3 structure prediction with test protein") {
-        tag "gpu"
-        options "-dump-hashes"
+    tag "modules"
+    tag "alphafold3"
+    tag "validation"
+
+    // -------------------------------------------------------------------------
+    // STUB TESTS
+    // -------------------------------------------------------------------------
+
+    test("stub - emits structure, mmCIF, confidences and ranking for one sequence") {
+        tag "stub"
+        options "-stub-run"
 
         when {
             process {
                 """
                 input[0] = [
-                    [ id: 'test_protein' ],
+                    [ id: 'test_design', lineage: 'boltzgen_1_mpnn_1' ],
                     file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
                 ]
                 """
@@ -20,40 +28,105 @@ nextflow_process {
         }
 
         then {
-            DebugUtils.printTree(process.out)
+            def scores = process.out.scores[0][1]
+            def scoreNames = (scores instanceof List ? scores : [scores]).collect { path(it).fileName.toString() }
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 1 },
+                { assert process.out.cifs.size() == 1 },
+                { assert process.out.ranking.size() == 1 },
+                { assert process.out.versions.size() == 1 },
 
-            assert process.success
+                // Output names are keyed on the FASTA basename, not meta.lineage, so
+                // that sequences from the two MPNN tools stay distinct.
+                { assert path(process.out.structures[0][1]).fileName.toString() ==
+                        'model_test_protein_alphafold_1_alphafold3.pdb' },
+                { assert path(process.out.cifs[0][1]).fileName.toString() ==
+                        'model_test_protein_alphafold_1_alphafold3.cif' },
+                { assert path(process.out.ranking[0][1]).fileName.toString() ==
+                        'ranking_scores_test_protein_alphafold_1_alphafold3.csv' },
 
-            // Top-ranked model is emitted as both PDB and mmCIF
-            assert process.out.structures.size() == 1
-            def (meta, pdbPath) = process.out.structures[0]
-            assert meta.id == 'test_protein'
-            assert path(pdbPath).fileName.toString() == 'model_test_protein_alphafold_1_alphafold3.pdb'
-            assert process.out.cifs.size() == 1
+                // Both confidence files travel on the scores channel.
+                { assert scoreNames.size() == 2 },
+                { assert scoreNames.any { it.startsWith('confidences_') } },
+                { assert scoreNames.any { it.startsWith('summary_confidences_') } },
 
-            // Versions output is present
-            assert process.out.versions.size() == 1
-            def versionsYml = path(process.out.versions[0])
-            assert versionsYml.text.contains('ALPHAFOLD3')
-            assert versionsYml.text.contains('alphafold3')
+                { assert path(process.out.versions[0]).text.contains('ALPHAFOLD3') },
+                { assert snapshot(process.out).match() }
+            )
         }
-
     }
 
-    // =========================================================================
-    // STUB TESTS
-    // =========================================================================
-
-    test("stub | alphafold3 structure prediction with test protein") {
+    test("stub - sequences from the two MPNN tools do not collide") {
         tag "stub"
-        tag "fast"
-        options "-stub-run -dump-hashes"
+        options "-stub-run"
+
+        when {
+            process {
+                """
+                input[0] = channel.of(
+                    [ [ id: 'd', lineage: 'rfdiffusion_1_mpnn_1' ], file("${projectDir}/tests/data/rfdiffusion_1_mpnn_1_proteinmpnn.fa") ],
+                    [ [ id: 'd', lineage: 'rfdiffusion_1_mpnn_1' ], file("${projectDir}/tests/data/rfdiffusion_1_mpnn_1_ligandmpnn.fa") ]
+                )
+                """
+            }
+        }
+
+        then {
+            def names = process.out.structures.collect { path(it[1]).fileName.toString() } as Set
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 2 },
+                // Two distinct names: nothing is overwritten when these are published.
+                { assert names.size() == 2 },
+                { assert names.contains('model_rfdiffusion_1_mpnn_1_proteinmpnn_alphafold_1_alphafold3.pdb') },
+                { assert names.contains('model_rfdiffusion_1_mpnn_1_ligandmpnn_alphafold_1_alphafold3.pdb') }
+            )
+        }
+    }
+
+    test("stub - every structure is accompanied by its score files") {
+        tag "stub"
+        options "-stub-run"
+
+        when {
+            process {
+                """
+                input[0] = channel.of(
+                    [ [ id: 'd' ], file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta") ],
+                    [ [ id: 'd' ], file("${projectDir}/modules/local/proteinmpnn/TESTDATA/test_structure.pdb") ]
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // A prediction without its confidences cannot be ranked, so the counts
+                // must stay in lockstep across all four output channels.
+                { assert process.out.structures.size() == 2 },
+                { assert process.out.cifs.size() == 2 },
+                { assert process.out.scores.size() == 2 },
+                { assert process.out.ranking.size() == 2 }
+            )
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FULL TEST - needs the locally built SIF, the AlphaFold 3 databases, the
+    // weights, and an A100 or newer.  nf-test test --tag gpu
+    // -------------------------------------------------------------------------
+
+    test("alphafold3 folds a designed sequence") {
+        tag "gpu"
+        tag "full"
 
         when {
             process {
                 """
                 input[0] = [
-                    [ id: 'test_protein' ],
+                    [ id: 'test_design', lineage: 'boltzgen_1_mpnn_1' ],
                     file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
                 ]
                 """
@@ -61,21 +134,17 @@ nextflow_process {
         }
 
         then {
-            DebugUtils.printTree(process.out)
-            assert process.success
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 1 },
 
-            assert process.out.structures.size() == 1
-            def (meta, pdbPath) = process.out.structures[0]
-            assert meta.id == 'test_protein'
-            assert path(pdbPath).fileName.toString() == 'model_test_protein_alphafold_1_alphafold3.pdb'
+                // The module converts AF3's mmCIF to PDB with gemmi; both must be real.
+                { assert path(process.out.structures[0][1]).text.contains('ATOM') },
+                { assert path(process.out.cifs[0][1]).text.contains('_atom_site') },
 
-            assert process.out.cifs.size() == 1
-            assert process.out.scores.size() == 1
-            assert process.out.ranking.size() == 1
-            assert process.out.versions.size() == 1
-
-            assert snapshot(process.out).match()
+                // A ranking score is what makes the prediction comparable to others.
+                { assert path(process.out.ranking[0][1]).text.contains('ranking_score') }
+            )
         }
-
     }
 }

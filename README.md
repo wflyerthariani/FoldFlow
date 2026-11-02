@@ -241,11 +241,18 @@ without opening a log.
 │   ├── LigandMPNN.yaml
 │   ├── AlphaFold.yaml
 │   └── AlphaFold3.yaml
-└── bin/
-    ├── reformat_fixed_residues.py   # RFdiffusion TRB -> .fixed_regions
-    ├── split_mpnn_fastas.py         # one sequence per FASTA
-    ├── fasta_to_af3_json.py         # FASTA -> AlphaFold 3 input JSON
-    └── yaml_to_args.py              # YAML -> CLI flags
+├── bin/
+│   ├── reformat_fixed_residues.py   # RFdiffusion TRB -> .fixed_regions
+│   ├── split_mpnn_fastas.py         # one sequence per FASTA
+│   ├── fasta_to_af3_json.py         # FASTA -> AlphaFold 3 input JSON
+│   └── yaml_to_args.py              # YAML -> CLI flags
+└── tests/
+    ├── run_tests.sh                 # entry point for all tiers
+    ├── test_helpers.py              # unit tests for bin/
+    ├── test_config.py               # containers, weights and databases reachable
+    ├── test_stub.py                 # whole-workflow stub output
+    ├── pipeline.nf.test             # nf-test end-to-end suite
+    └── data/                        # shared fixtures for the nf-test suites
 ```
 
 ## Adding a tool to a stage
@@ -270,6 +277,10 @@ To drop a tool from a run without deleting it, set `ext.when = false` on its `wi
   `'.*:BOLTZGEN'` in the executor config fixes it.
 - **The run summary always says failed.** The `onComplete` block in `main.nf` prints
   `Execution status: failed` even on a clean run. Check the exit status instead.
+- **RFdiffusion publishes a `*.trb` pattern that no longer matches anything.** The module
+  converts the TRB to a `.fixed_regions` sidecar and deletes it, so that `publishDir` block
+  is dead. The sidecar itself is never published — it reaches the sequence stage through the
+  channel, so runs are unaffected.
 - **`max_cpus`, `max_memory` and `max_time` are declared but not enforced.** No `check_max()`
   helper reads them, so passing `--max_memory` has no effect. Set resources per label or per
   process in your own `-c` config instead, as shown under *Executor and resources*.
@@ -294,10 +305,69 @@ AlphaFold is the usual culprit on long sequences.
 
 ## Testing
 
+Four tiers. The first three need nothing but Python and Nextflow; only `--tag gpu` needs a
+GPU, a container or model weights.
+
 ```bash
-nextflow run main.nf -profile test -stub-run --input_pdb 6px6.pdb   # whole workflow, no compute
-nf-test test modules/local/<tool>/main.nf.test                      # one module
+./tests/run_tests.sh                    # helpers + tool setup      (~2 s)
+./tests/run_tests.sh config             # just: are my tools reachable
+./tests/run_tests.sh config alphafold3  # one tool
+./tests/run_tests.sh stub               # whole-workflow stub run   (~1 min)
+./tests/run_tests.sh nftest             # nf-test module suites, stub tags
+./tests/run_tests.sh all                # everything above
 ```
+
+| Tier | Covers | Needs | Time |
+|------|--------|-------|------|
+| `helpers` | 23 unit tests over the four `bin/` scripts — chain separators, record splitting, TRB reformatting, YAML to flags | python3 | ~2 s |
+| `config` | Resolves the same YAML keys each module resolves and checks every container, weights file and database it will mount exists and is readable | python3 | instant |
+| `stub` | Runs the whole workflow with placeholder commands, then asserts fan-out, filename lineage and publish paths | nextflow | ~1 min |
+| `nftest` | Per-module nf-test suites: output cardinality, lineage handling, filename contracts | nf-test | ~1 min |
+
+`config` is the one to run after moving to a new system or changing a path — it names the tool
+that is not wired up and why, without queueing a job. `stub` runs in a scratch directory, so it
+never touches a real run's `-resume` cache and is safe to run while one is in progress.
+
+### nf-test module suites
+
+Every module has a suite beside it at `modules/local/<tool>/main.nf.test`, plus a
+pipeline-level suite at `tests/pipeline.nf.test` — 28 tests, 22 of which are fast stub tests
+needing no GPU, container or weights. `nf-test.config` sets `testsDir` to the repository
+root, so plain `nf-test test` finds them all.
+
+```bash
+nf-test test --tag stub                 # all 22 fast tests          (~110 s)
+nf-test test                            # everything, including gpu  (slow)
+nf-test test --tag gpu                  # real tools only
+nf-test test modules/local/boltzgen/main.nf.test            # one module, all tests
+nf-test test modules/local/boltzgen/main.nf.test --tag stub # one module, fast only (~15 s)
+nf-test test --tag stub --update-snapshot                   # after an intended change
+```
+
+> Several `--tag` flags are combined with OR, not AND: `--tag boltzgen --tag stub` runs
+> everything tagged *either* way, not the intersection. To narrow to one module's fast tests,
+> give the file path *and* `--tag stub`, as above.
+
+| Tag | Selects |
+|-----|---------|
+| `stub` | Fast tests that run no tool |
+| `gpu`, `full` | Real runs needing containers, weights and a GPU |
+| `modules` | The six module suites |
+| `pipeline` | The end-to-end suite |
+| `backbone`, `sequence`, `validation` | One stage |
+| `rfdiffusion`, `boltzgen`, `proteinmpnn`, `ligandmpnn`, `alphafold`, `alphafold3` | One tool |
+
+Snapshots live beside each suite as `main.nf.test.snap` and are committed; a diff there means
+an output name or shape changed. If nf-test is not on your PATH, install it with:
+
+```bash
+curl -fsSL https://code.askimed.com/install/nf-test | bash
+mkdir -p ~/.local/bin && mv nf-test nf-test.jar ~/.local/bin/
+```
+
+It needs Nextflow and Java 17+ on PATH. `./tests/run_tests.sh nftest` also looks for nf-test
+inside conda environments, so an `nf-core` env that already provides it is picked up without
+being activated.
 
 ## Citation
 

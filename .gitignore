@@ -4,3 +4,10 @@ work/
 results/
 
 weights/
+# Python bytecode from the test suite
+__pycache__/
+*.pyc
+
+# nf-test scratch (snapshots in *.nf.test.snap ARE tracked)
+.nf-test/
+.nf-test.log

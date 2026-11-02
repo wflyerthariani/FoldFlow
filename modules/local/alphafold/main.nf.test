@@ -4,16 +4,23 @@ nextflow_process {
     script "modules/local/alphafold/main.nf"
     process "ALPHAFOLD"
 
-    test("alphafold structure prediction with test protein") {
-        tag "fast"
-        tag "gpu"
-        options "-dump-hashes"
+    tag "modules"
+    tag "alphafold"
+    tag "validation"
+
+    // -------------------------------------------------------------------------
+    // STUB TESTS
+    // -------------------------------------------------------------------------
+
+    test("stub - emits a structure, scores and timings for one sequence") {
+        tag "stub"
+        options "-stub-run"
 
         when {
             process {
                 """
                 input[0] = [
-                    [ id: 'test_protein' ],
+                    [ id: 'test_protein', lineage: 'rfdiffusion_1_mpnn_1' ],
                     file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
                 ]
                 """
@@ -21,43 +28,56 @@ nextflow_process {
         }
 
         then {
-            DebugUtils.printTree(process.out)
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 1 },
+                { assert process.out.versions.size() == 1 },
 
-            assert process.success
+                { assert process.out.structures[0][0].id == 'test_protein' },
+                { assert path(process.out.structures[0][1]).fileName.toString() ==
+                        'test_protein_model_1_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.pdb' },
 
-            // Output PDB structure file exists with correct naming
-            assert process.out.structures.size() == 1
-            def (meta, pdbPath) = process.out.structures[0]
-            assert meta.id == 'test_protein'
-            
-            // Check that PDB files were generated
-            def pdbFiles = pdbPath instanceof List ? pdbPath : [pdbPath]
-            assert pdbFiles.size() > 0
-            pdbFiles.each { pdb ->
-                def pdbFile = path(pdb)
-                assert pdbFile.exists()
-                assert pdbFile.fileName.toString().endsWith('.pdb')
-            }
-
-            // Versions output is present
-            assert process.out.versions.size() == 1
-            def versionsYml = path(process.out.versions[0])
-            assert versionsYml.text.contains('ALPHAFOLD')
-            assert versionsYml.text.contains('alphafold')
-
-            assert snapshot(process.out).match()
+                { assert path(process.out.versions[0]).text.contains('ALPHAFOLD') },
+                { assert snapshot(process.out).match() }
+            )
         }
-
     }
 
-    // =========================================================================
-    // STUB TESTS
-    // =========================================================================
-
-    test("stub | alphafold structure prediction with test protein") {
+    test("stub - the scores glob also captures the timings file") {
         tag "stub"
-        tag "fast"
-        options "-stub-run -dump-hashes"
+        options "-stub-run"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein', lineage: 'rfdiffusion_1_mpnn_1' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            def scores = process.out.scores[0][1]
+            def scoreNames = (scores instanceof List ? scores : [scores]).collect { path(it).fileName.toString() }
+            assertAll(
+                { assert process.success },
+                // `scores` is declared as path("*.json") while `timings` is
+                // path("*timings*.json"), so the timings file appears in both channels.
+                // Asserted rather than ignored: a future narrowing of the glob should
+                // fail here and be a deliberate decision.
+                { assert scoreNames.size() == 2 },
+                { assert scoreNames.any { it.startsWith('test_protein_scores_') } },
+                { assert scoreNames.any { it.startsWith('timings_') } },
+                { assert process.out.timings.size() == 1 }
+            )
+        }
+    }
+
+    test("stub - falls back to a default lineage when meta has none") {
+        tag "stub"
+        options "-stub-run"
 
         when {
             process {
@@ -71,29 +91,72 @@ nextflow_process {
         }
 
         then {
-            DebugUtils.printTree(process.out)
-            assert process.success
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.structures[0][1]).fileName.toString() ==
+                        'test_protein_model_1_rfdiffusion_1_mpnn_1_alphafold_1_alphafold.pdb' }
+            )
+        }
+    }
 
-            // Output PDB structure file exists with correct naming
-            assert process.out.structures.size() == 1
-            def (meta, pdbPath) = process.out.structures[0]
-            assert meta.id == 'test_protein'
-            
-            // Check that stub PDB file was generated
-            def pdbFile = path(pdbPath)
-            assert pdbFile.fileName.toString() == 'test_protein_model_1.pdb'
+    test("stub - sequences from the two MPNN tools collide on output name") {
+        tag "stub"
+        options "-stub-run"
 
-            // Scores output is present
-            assert process.out.scores.size() == 1
-            
-            // Timings output is present
-            assert process.out.timings.size() == 1
-
-            // Versions output is present
-            assert process.out.versions.size() == 1
-
-            assert snapshot(process.out).match()
+        when {
+            process {
+                """
+                input[0] = channel.of(
+                    [ [ id: 'd', lineage: 'rfdiffusion_1_mpnn_1' ], file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta") ],
+                    [ [ id: 'd', lineage: 'rfdiffusion_1_mpnn_1' ], file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta") ]
+                )
+                """
+            }
         }
 
+        then {
+            def names = process.out.structures.collect { path(it[1]).fileName.toString() } as Set
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 2 },
+                // Known issue: AlphaFold 2 filenames carry the backbone lineage but not
+                // the sequence-design tool, so a ProteinMPNN and a LigandMPNN sequence
+                // from the same backbone publish to the same name and one is lost.
+                // AlphaFold 3 includes the tool and does not have this problem.
+                { assert names.size() == 1 }
+            )
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FULL TEST - needs the container, the AlphaFold 2 databases and a GPU.
+    // Slow (MSA search dominates).  nf-test test --tag gpu
+    // -------------------------------------------------------------------------
+
+    test("alphafold folds a designed sequence") {
+        tag "gpu"
+        tag "full"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test_protein', lineage: 'rfdiffusion_1_mpnn_1' ],
+                    file("${projectDir}/modules/local/alphafold/TESTDATA/test_protein.fasta")
+                ]
+                """
+            }
+        }
+
+        then {
+            def pdbs = process.out.structures[0][1]
+            def pdbList = pdbs instanceof List ? pdbs : [pdbs]
+            assertAll(
+                { assert process.success },
+                { assert process.out.structures.size() == 1 },
+                { assert pdbList.every { path(it).text.contains('ATOM') } },
+                { assert process.out.timings.size() == 1 }
+            )
+        }
     }
 }
