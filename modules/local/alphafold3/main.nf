@@ -23,6 +23,7 @@ process ALPHAFOLD3 {
     def num_diffusion_samples = yaml_value('num_diffusion_samples', '5')
     def flash_attention_implementation = yaml_value('flash_attention_implementation', 'triton')
 
+
     // DeepMind publishes no AF3 image, so this points at a locally built SIF
     // (see build_container.sh) instead of a registry URI like the other modules.
     container "${container_image}"

@@ -1,3 +1,7 @@
+# Predictions per designed sequence. Only 0 or 1 is meaningful:
+# 0 switches AlphaFold 2 off entirely.
+_num_outputs: 1
+
 _data_dir: /ibex/reference/KSL/alphafold/2.3.1/
 _cuda_lib_dir: /sw/csgv_DONOTUSE/cuda/11.1.1/el7.9_binary/targets/x86_64-linux/lib
 _jax_platform: cuda

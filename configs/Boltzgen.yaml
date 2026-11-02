@@ -1,3 +1,9 @@
+# Number of backbones this tool contributes, one per design index.
+# 0 switches BoltzGen off entirely; no tasks are submitted.
+# Distinct from _num_designs below, which is how many designs BoltzGen
+# generates inside a single task - leave that at 1.
+_num_outputs: 3
+
 # Runtime and container settings
 _editables_dir: /ibex/user/x_thariaa/mark_test/FoldFlow
 _model_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/weights/boltzgen/models

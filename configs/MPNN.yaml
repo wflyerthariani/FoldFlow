@@ -1,3 +1,7 @@
+# Sequences ProteinMPNN designs for each backbone.
+# 0 switches ProteinMPNN off entirely.
+_num_outputs: 2
+
 suppress_print: 0
 ca_only: False
 path_to_model_weights: ""

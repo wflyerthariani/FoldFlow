@@ -1,3 +1,7 @@
+# Predictions per designed sequence. Only 0 or 1 is meaningful:
+# 0 switches AlphaFold 3 off entirely.
+_num_outputs: 1
+
 # AlphaFold 3 runtime settings (_-prefixed keys are read by the module, not passed to AF3)
 # _container:  SIF built by modules/local/alphafold3/build_container.sh
 # _db_dir:     AF3 genetic databases (bind-mounted read-only automatically)

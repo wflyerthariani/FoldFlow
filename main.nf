@@ -38,17 +38,33 @@ workflow FOLDFLOW_PIPELINE {
     
     // Create design index channel
     def ch_input_pdb = channel.fromPath(params.input_pdb, checkIfExists: true)
-    def num_designs = (params.rfdiff_num_designs ?: params.num_designs ?: 3) as Integer
-    def design_indices = channel.of(0..(num_designs - 1))
-        .combine(ch_input_pdb)
-        .map { idx, pdb ->
-            def meta = [
-                id: params.output_prefix ?: "design",
-                design_idx: idx
-            ]
-            tuple(meta, idx, pdb)
-        }
-    
+
+    // Each backbone tool decides how many backbones it contributes via _num_outputs in
+    // its own YAML. We emit as many design indices as the greediest tool needs; each
+    // module then ignores the indices beyond its own count, so a tool set to 0 simply
+    // never runs.
+    def rfdiff_designs = ToolConfig.numOutputs(
+        params.rfdiff_config_path, params.rfdiff_config_name, params.rfdiff_num_designs, 3)
+    def boltzgen_designs = ToolConfig.numOutputs(
+        params.boltzgen_config_path, params.boltzgen_config_name, params.boltzgen_num_designs, 3)
+    def num_designs = Math.max(rfdiff_designs, boltzgen_designs)
+
+    if (num_designs < 1) {
+        log.warn "Both backbone tools have _num_outputs 0 - no designs will be generated."
+    }
+
+    def design_indices = num_designs > 0
+        ? channel.of(0..(num_designs - 1))
+            .combine(ch_input_pdb)
+            .map { idx, pdb ->
+                def meta = [
+                    id: params.output_prefix ?: "design",
+                    design_idx: idx
+                ]
+                tuple(meta, idx, pdb)
+            }
+        : channel.empty()
+
     // Run main workflow
     FOLDFLOW(
         design_indices

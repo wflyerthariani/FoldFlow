@@ -15,6 +15,7 @@ process LIGANDMPNN {
     }
     def model_weights_path = yaml_value('_model_weights_path', '')
 
+
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'docker://rosettacommons/ligandmpnn'
@@ -42,7 +43,8 @@ process LIGANDMPNN {
 
     script:
     def args = task.ext.args ?: ''
-    def num_sequences = params.ligandmpnn_num_sequences ?: 2
+    def num_sequences = ToolConfig.numOutputs(params.ligandmpnn_config_path, params.ligandmpnn_config_name,
+        params.ligandmpnn_num_sequences, 2)
     def helper_dir = "${projectDir}/bin"
     def tool_tag = task.ext.tool_name ?: 'ligandmpnn'
     def lineage = meta.lineage ?: "design_${(meta.design_idx as Integer) + 1}"
@@ -105,7 +107,8 @@ process LIGANDMPNN {
     """
 
     stub:
-    def num_sequences = params.ligandmpnn_num_sequences ?: 2
+    def num_sequences = ToolConfig.numOutputs(params.ligandmpnn_config_path, params.ligandmpnn_config_name,
+        params.ligandmpnn_num_sequences, 2)
     def tool_tag = task.ext.tool_name ?: 'ligandmpnn'
     def lineage = meta.lineage ?: "design_${(meta.design_idx as Integer) + 1}"
     """

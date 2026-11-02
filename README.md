@@ -81,9 +81,12 @@ Every module takes the same pair: `<module>_config_path` and `<module>_config_na
 | `output_prefix` | `design` | Names the results subfolder and is embedded in output filenames |
 | `outdir` | `./results` | Output directory |
 | `publish_dir_mode` | `copy` | How results are published (`copy`, `symlink`, `link`, …) |
-| `rfdiff_num_designs` | `3` | Design indices. Each backbone tool runs once per index |
-| `mpnn_num_sequences` | `2` | Sequences per backbone from ProteinMPNN |
-| `ligandmpnn_num_sequences` | `2` | Sequences per backbone from LigandMPNN |
+| `rfdiff_num_designs` | *(from YAML)* | Overrides RFdiffusion's `_num_outputs` for one run |
+| `boltzgen_num_designs` | *(from YAML)* | Overrides BoltzGen's `_num_outputs` |
+| `mpnn_num_sequences` | *(from YAML)* | Overrides ProteinMPNN's `_num_outputs` |
+| `ligandmpnn_num_sequences` | *(from YAML)* | Overrides LigandMPNN's `_num_outputs` |
+| `alphafold_num_predictions` | *(from YAML)* | Overrides AlphaFold 2's `_num_outputs` |
+| `alphafold3_num_predictions` | *(from YAML)* | Overrides AlphaFold 3's `_num_outputs` |
 | `rfdiff_config_path` / `_name` | `configs/` · `RFdiffusion.yaml` | Which YAML configures RFdiffusion |
 | `boltzgen_config_path` / `_name` | `configs/` · `Boltzgen.yaml` | …BoltzGen |
 | `mpnn_config_path` / `_name` | `configs/` · `MPNN.yaml` | …ProteinMPNN |
@@ -91,8 +94,52 @@ Every module takes the same pair: `<module>_config_path` and `<module>_config_na
 | `alphafold_config_path` / `_name` | `configs/` · `AlphaFold.yaml` | …AlphaFold 2 |
 | `alphafold3_config_path` / `_name` | `configs/` · `AlphaFold3.yaml` | …AlphaFold 3 |
 
-> `--num_designs` appears in `main.nf` as a fallback but can never take effect, because
-> `rfdiff_num_designs` always carries a default. Use `--rfdiff_num_designs`.
+> How much each tool produces is set in its own YAML, not here — see
+> [How many outputs each tool produces](#how-many-outputs-each-tool-produces). These
+> parameters exist only to override a YAML value for a single run, and default to unset.
+
+## How many outputs each tool produces
+
+Each module's YAML carries a `_num_outputs` key saying how much that tool contributes.
+**Setting it to 0 switches the tool off** — it is handed an empty channel, never runs, and
+the other tool in its stage carries on.
+
+| File | `_num_outputs` counts | Default |
+|------|----------------------|---------|
+| `configs/RFdiffusion.yaml` | Backbones, one per design index | 3 |
+| `configs/Boltzgen.yaml` | Backbones, one per design index | 3 |
+| `configs/MPNN.yaml` | Sequences per backbone | 2 |
+| `configs/LigandMPNN.yaml` | Sequences per backbone | 2 |
+| `configs/AlphaFold.yaml` | Predictions per sequence (0 or 1) | 1 |
+| `configs/AlphaFold3.yaml` | Predictions per sequence (0 or 1) | 1 |
+
+The two backbone tools are independent: RFdiffusion at 5 and BoltzGen at 2 gives 7 backbones.
+The pipeline emits as many design indices as the greediest tool needs, and each tool takes
+only the first `_num_outputs` of them.
+
+```yaml
+# configs/Boltzgen.yaml - run RFdiffusion only
+_num_outputs: 0
+```
+
+```yaml
+# configs/AlphaFold.yaml - validate with AlphaFold 3 alone
+_num_outputs: 0
+```
+
+Every count also has a parameter for overriding it without editing the YAML, which is how
+the `test` profile pins its numbers:
+
+```bash
+nextflow run main.nf --input_pdb in.pdb -profile singularity \
+  --boltzgen_num_designs 0 --alphafold_num_predictions 0
+```
+
+With all counts at their defaults, one input structure gives 6 backbones, 24 sequences and
+48 predictions. Setting both backbone tools to 0 produces nothing and logs a warning.
+
+> `_num_outputs` is separate from `_num_designs` in `configs/Boltzgen.yaml`, which is how many
+> designs BoltzGen generates inside a single task — leave that at 1.
 
 ## Pointing the pipeline at your system
 
@@ -221,7 +268,8 @@ without opening a log.
 ```
 ├── main.nf                          # entry point: reads input, fans out design indices
 ├── nextflow.config                  # pipeline params and profiles
-├── workflows/foldflow.nf            # stage wiring
+├── workflows/foldflow.nf            # stage wiring and per-tool gating
+├── lib/ToolConfig.groovy            # reads _num_outputs from the module YAMLs
 ├── modules/local/
 │   ├── rfdiffusion/                 # each: main.nf, environment.yml, main.nf.test
 │   ├── boltzgen/

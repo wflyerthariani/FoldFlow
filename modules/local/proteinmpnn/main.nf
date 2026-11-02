@@ -13,6 +13,7 @@ process PROTEINMPNN {
         }
         return defaultValue
     }
+
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'docker://rosettacommons/proteinmpnn:latest'
@@ -30,7 +31,8 @@ process PROTEINMPNN {
 
     script:
     def args = task.ext.args ?: ''
-    def num_sequences = params.mpnn_num_sequences ?: 2
+    def num_sequences = ToolConfig.numOutputs(params.mpnn_config_path, params.mpnn_config_name,
+        params.mpnn_num_sequences, 2)
     def helper_dir = "${projectDir}/bin"
     def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
     def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
@@ -121,7 +123,8 @@ process PROTEINMPNN {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def num_sequences = params.mpnn_num_sequences ?: 2
+    def num_sequences = ToolConfig.numOutputs(params.mpnn_config_path, params.mpnn_config_name,
+        params.mpnn_num_sequences, 2)
     def tool_tag = task.ext.tool_name ?: 'proteinmpnn'
     def lineage = meta.lineage ?: "rfdiffusion_${(meta.design_idx as Integer) + 1}"
     """

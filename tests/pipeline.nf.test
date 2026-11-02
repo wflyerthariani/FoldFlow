@@ -17,9 +17,14 @@ nextflow_pipeline {
                 input_pdb                = "${projectDir}/6px6.pdb"
                 outdir                   = "${outputDir}"
                 output_prefix            = 'test_design'
-                rfdiff_num_designs       = 2
-                mpnn_num_sequences       = 1
-                ligandmpnn_num_sequences = 2
+                // All six counts are pinned: nf-test runs without the `test`
+                // profile, so anything left unset would fall back to configs/*.yaml.
+                rfdiff_num_designs         = 2
+                boltzgen_num_designs       = 2
+                mpnn_num_sequences         = 1
+                ligandmpnn_num_sequences   = 2
+                alphafold_num_predictions  = 1
+                alphafold3_num_predictions = 1
             }
         }
 
@@ -66,6 +71,55 @@ nextflow_pipeline {
                 // overwrite each other on publish. Known issue, asserted so that
                 // fixing it shows up here rather than silently.
                 { assert published('alphafold', /.*_alphafold\.pdb/) == 8 }
+            )
+        }
+    }
+
+    // Setting a tool's _num_outputs to 0 (here via its param override) must remove it
+    // from the run entirely while the other tool in its stage carries on.
+    test("stub - a tool set to 0 is switched off and the rest still run") {
+        tag "stub"
+        tag "switches"
+        options "-stub-run"
+
+        when {
+            params {
+                input_pdb                  = "${projectDir}/6px6.pdb"
+                outdir                     = "${outputDir}"
+                output_prefix              = 'test_design'
+                rfdiff_num_designs         = 2
+                boltzgen_num_designs       = 0   // off
+                mpnn_num_sequences         = 1
+                ligandmpnn_num_sequences   = 2
+                alphafold_num_predictions  = 0   // off
+                alphafold3_num_predictions = 1
+            }
+        }
+
+        then {
+            // 2 backbones from RFdiffusion alone, x (1 + 2) sequences = 6 sequences,
+            // folded by AlphaFold 3 only = 6 predictions.
+            def byProcess = { String name ->
+                workflow.trace.succeeded().count { it.name ==~ /(?s).*\b${name}\b.*/ }
+            }
+            def published = { String stage, String glob ->
+                def dir = new File("${outputDir}/test_design/${stage}")
+                dir.isDirectory() ? dir.listFiles().findAll { it.name ==~ glob }.size() : 0
+            }
+
+            assertAll(
+                { assert workflow.success },
+
+                { assert byProcess('RFDIFFUSION') == 2 },
+                { assert byProcess('BOLTZGEN')    == 0 },
+                { assert byProcess('PROTEINMPNN') == 2 },
+                { assert byProcess('LIGANDMPNN')  == 2 },
+                { assert byProcess('ALPHAFOLD')   == 0 },
+                { assert byProcess('ALPHAFOLD3')  == 6 },
+
+                { assert published('boltzgen',   /.*\.pdb/)                == 0 },
+                { assert published('alphafold',  /.*\.pdb/)                == 0 },
+                { assert published('alphafold3', /model_.*_alphafold3\.pdb/) == 6 }
             )
         }
     }

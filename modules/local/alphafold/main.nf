@@ -22,6 +22,7 @@ process ALPHAFOLD {
     def use_gpu_relax = yaml_value('use_gpu_relax', 'true')
     def jax_platform = yaml_value('_jax_platform', 'cuda').toLowerCase()
 
+
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'docker://catgumag/alphafold:2.3.0'

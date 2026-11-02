@@ -24,14 +24,39 @@ workflow FOLDFLOW {
     main:
     def ch_versions = channel.empty()
 
+    // How much each tool contributes, from _num_outputs in its own YAML (see
+    // configs/*.yaml). 0 switches a tool off: it is handed an empty channel and
+    // never runs, while the other tool in its stage carries on.
+    def n_rfdiffusion = ToolConfig.numOutputs(
+        params.rfdiff_config_path, params.rfdiff_config_name, params.rfdiff_num_designs, 3)
+    def n_boltzgen = ToolConfig.numOutputs(
+        params.boltzgen_config_path, params.boltzgen_config_name, params.boltzgen_num_designs, 3)
+    def n_proteinmpnn = ToolConfig.numOutputs(
+        params.mpnn_config_path, params.mpnn_config_name, params.mpnn_num_sequences, 2)
+    def n_ligandmpnn = ToolConfig.numOutputs(
+        params.ligandmpnn_config_path, params.ligandmpnn_config_name,
+        params.ligandmpnn_num_sequences, 2)
+    def n_alphafold = ToolConfig.numOutputs(
+        params.alphafold_config_path, params.alphafold_config_name,
+        params.alphafold_num_predictions, 1)
+    def n_alphafold3 = ToolConfig.numOutputs(
+        params.alphafold3_config_path, params.alphafold3_config_name,
+        params.alphafold3_num_predictions, 1)
+
     // Stamp each copy of design_indices with the tool-specific lineage before branching.
-    // DSL2 channels can be consumed by multiple operators independently.
-    def rfd_indices = design_indices.map { meta, idx, pdb ->
-        tuple(meta + [lineage: "rfdiffusion_${(idx as Integer) + 1}"], idx, pdb)
-    }
-    def bg_indices = design_indices.map { meta, idx, pdb ->
-        tuple(meta + [lineage: "boltzgen_${(idx as Integer) + 1}"], idx, pdb)
-    }
+    // DSL2 channels can be consumed by multiple operators independently. The upstream
+    // channel carries as many indices as the greediest backbone tool needs, so each
+    // tool takes only the first n of them.
+    def rfd_indices = design_indices
+        .filter { meta, idx, pdb -> (idx as Integer) < n_rfdiffusion }
+        .map { meta, idx, pdb ->
+            tuple(meta + [lineage: "rfdiffusion_${(idx as Integer) + 1}"], idx, pdb)
+        }
+    def bg_indices = design_indices
+        .filter { meta, idx, pdb -> (idx as Integer) < n_boltzgen }
+        .map { meta, idx, pdb ->
+            tuple(meta + [lineage: "boltzgen_${(idx as Integer) + 1}"], idx, pdb)
+        }
 
     //
     // MODULE: RFdiffusion — backbone structure generation
@@ -63,10 +88,10 @@ workflow FOLDFLOW {
     //   2. Call NEWTOOL(ch_backbone_input) below
     //   3. Mix its .out.sequences into ch_sequences
     //   4. Add a withName: 'NEWTOOL' block in conf/modules.config
-    PROTEINMPNN(ch_backbone_input)
+    PROTEINMPNN(n_proteinmpnn > 0 ? ch_backbone_input : channel.empty())
     ch_versions = ch_versions.mix(PROTEINMPNN.out.versions.first())
 
-    LIGANDMPNN(ch_backbone_input)
+    LIGANDMPNN(n_ligandmpnn > 0 ? ch_backbone_input : channel.empty())
     ch_versions = ch_versions.mix(LIGANDMPNN.out.versions.first())
 
     def ch_sequences = PROTEINMPNN.out.sequences
@@ -92,10 +117,10 @@ workflow FOLDFLOW {
             tuple(seq_meta, fasta)
         }
     
-    ALPHAFOLD(alphafold_input)
+    ALPHAFOLD(n_alphafold > 0 ? alphafold_input : channel.empty())
     ch_versions = ch_versions.mix(ALPHAFOLD.out.versions.first())
 
-    ALPHAFOLD3(alphafold_input)
+    ALPHAFOLD3(n_alphafold3 > 0 ? alphafold_input : channel.empty())
     ch_versions = ch_versions.mix(ALPHAFOLD3.out.versions.first())
 
     def ch_val_structures = ALPHAFOLD.out.structures

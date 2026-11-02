@@ -1,3 +1,7 @@
+# Number of backbones this tool contributes, one per design index.
+# 0 switches RFdiffusion off entirely; no tasks are submitted.
+_num_outputs: 3
+
 # Runtime and container settings
 _editables_dir: /ibex/user/x_thariaa/mark_test/FoldFlow
 _schedule_dir: /ibex/user/x_thariaa/mark_test/FoldFlow/weights/rfdiffusion/schedules

@@ -17,6 +17,7 @@ process RFDIFFUSION {
     def schedule_dir = yaml_value('_schedule_dir', "${editables_dir}/schedules")
     def model_dir = yaml_value('_model_dir', "${editables_dir}/models")
 
+
     // Container support: singularity pulls from docker://, docker uses Docker Hub image
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container

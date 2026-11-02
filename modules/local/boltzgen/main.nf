@@ -17,6 +17,7 @@ process BOLTZGEN {
     def model_dir = yaml_value('_model_dir', "${editables_dir}/weights/boltzgen/models")
     def num_designs = yaml_value('_num_designs', '1')
 
+
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'library://boltzgen/default/boltzgen_x86:latest'
